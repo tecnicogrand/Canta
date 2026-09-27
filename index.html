@@ -3,386 +3,492 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Voice Karaoke - Pro Edition</title>
+    <title>Neon Voice Pro - Sincronizado</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-dark: #090a0f;
-            --neon-blue: #00f3ff;
-            --neon-pink: #ff00ea;
-            --neon-purple: #9d00ff;
-            --text-light: #e0e0e0;
+            --bg-dark: #050505;
+            --neon-blue: #00e5ff;
+            --neon-pink: #ff007f;
+            --gold: #ffd700;
+            --text-light: #ffffff;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-light); min-height: 100vh; overflow: hidden; }
+        body { background-color: var(--bg-dark); color: var(--text-light); height: 100vh; overflow: hidden; }
 
         .screen {
             width: 100vw; height: 100vh; position: absolute; top: 0; left: 0;
             display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10;
         }
-        .screen.active { display: flex; animation: fadeIn 0.6s ease-out; }
+        .screen.active { display: flex; animation: fadeIn 0.5s ease-out; }
 
-        /* --- INICIO --- */
+        /* --- PANTALLA INICIO --- */
         #home-screen {
-            background: linear-gradient(135deg, #0f1016 0%, #1a1a2e 100%);
+            background: radial-gradient(circle at 50% 50%, #151520 0%, #050505 100%);
         }
-        .brand-container { text-align: center; margin-bottom: 40px; }
-        h1.title {
-            font-size: 4.5rem; font-weight: 900; color: #ffffff; text-transform: uppercase;
-            text-shadow: 0 0 10px var(--neon-blue), 0 0 30px var(--neon-blue), 0 0 60px var(--neon-purple); margin-bottom: 5px;
+        .title {
+            font-size: 5rem; font-weight: 900; text-transform: uppercase;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4)); margin-bottom: 30px;
         }
-        .subtitle { color: #8bb0c7; font-size: 1.1rem; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
 
         .input-box {
-            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
-            padding: 40px; width: 100%; max-width: 550px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px rgba(0, 243, 255, 0.1);
+            background: rgba(20, 20, 30, 0.6); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+            padding: 40px; width: 100%; max-width: 600px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
         }
-        .input-group { position: relative; margin-bottom: 25px; }
-        .input-group label {
-            position: absolute; top: -10px; left: 15px; background: #15161f;
-            padding: 0 10px; font-size: 0.8rem; color: var(--neon-blue); font-weight: 700; border-radius: 10px; z-index: 1;
-        }
+        
+        .input-group { position: relative; margin-bottom: 20px; }
         input {
-            width: 100%; padding: 18px 20px; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.3); color: white; font-size: 1.1rem; outline: none; transition: all 0.3s;
+            width: 100%; padding: 20px; border-radius: 12px; border: 2px solid transparent;
+            background: rgba(0, 0, 0, 0.5); color: white; font-size: 1.2rem; outline: none;
+            transition: all 0.3s;
         }
-        input:focus { border-color: var(--neon-pink); background: rgba(0, 0, 0, 0.5); box-shadow: 0 0 20px rgba(255, 0, 234, 0.2); }
-        .auto-fields { display: flex; gap: 15px; }
-
-        button {
-            width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 1.2rem;
-            font-weight: 800; text-transform: uppercase; cursor: pointer; transition: all 0.3s; color: #fff;
-        }
+        input:focus { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 229, 255, 0.2); }
+        
         .btn-start {
-            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 0, 234, 0.4);
+            width: 100%; padding: 20px; border: none; border-radius: 12px; font-size: 1.3rem;
+            font-weight: 900; text-transform: uppercase; cursor: pointer; color: #fff;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+            box-shadow: 0 10px 30px rgba(255, 0, 127, 0.4); transition: transform 0.2s;
         }
-        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 243, 255, 0.6); }
-        .status-msg { margin-top: 15px; color: var(--neon-blue); text-align: center; height: 20px; font-weight: bold; font-size: 0.9rem;}
+        .btn-start:hover { transform: scale(1.02); }
+        .status-msg { margin-top: 20px; text-align: center; color: var(--neon-blue); font-weight: 700; min-height: 20px; }
 
-        /* --- KARAOKE --- */
-        .video-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; overflow: hidden; background: #000; }
+        /* --- KARAOKE UI --- */
+        .video-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; background: #000; }
         .video-bg iframe {
             width: 100vw; height: 56.25vw; min-height: 100vh; min-width: 177.77vh;
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.6;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.4;
         }
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 100%); z-index: 2;
+            background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.9) 100%); z-index: 2;
         }
-        .karaoke-ui { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px; }
-        
-        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
+
+        .karaoke-container { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; }
+
+        /* Barra Superior */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center; padding: 20px 40px;
+        }
         .score-board {
-            background: rgba(10, 10, 15, 0.8); padding: 15px 30px; border-radius: 20px; border: 1px solid var(--neon-pink);
-            backdrop-filter: blur(10px); text-align: center; box-shadow: 0 0 20px rgba(255, 0, 234, 0.2);
+            background: rgba(0,0,0,0.6); padding: 15px 30px; border-radius: 20px; border: 2px solid var(--neon-blue);
+            text-align: center; backdrop-filter: blur(10px);
         }
-        .score-title { font-size: 0.9rem; color: #aaa; letter-spacing: 2px; }
-        .score-number { font-size: 3rem; font-weight: 900; color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); transition: transform 0.1s; }
+        .score-title { font-size: 1rem; color: #888; letter-spacing: 2px; }
+        .score-number { font-size: 3.5rem; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue); }
+
+        .feedback-badge {
+            font-size: 2.5rem; font-weight: 900; opacity: 0; transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase; text-shadow: 0 0 20px currentColor;
+        }
+        .feedback-badge.show { opacity: 1; transform: scale(1); }
+        .feedback-badge.perfect { color: var(--gold); }
+        .feedback-badge.good { color: var(--neon-blue); }
+        .feedback-badge.bad { color: #ff3333; }
+
+        /* Letras Sincronizadas */
+        .lyrics-viewport {
+            flex-grow: 1; position: relative; overflow: hidden; display: flex; flex-direction: column;
+            justify-content: center; mask-image: linear-gradient(transparent, black 20%, black 80%, transparent);
+            -webkit-mask-image: linear-gradient(transparent, black 20%, black 80%, transparent);
+        }
         
-        .voice-monitor {
-            background: rgba(10, 10, 15, 0.8); border: 1px solid var(--neon-blue); border-radius: 20px;
-            width: 320px; transition: all 0.3s ease; overflow: hidden; box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+        .lyrics-scroller {
+            position: absolute; top: 50%; width: 100%; transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
-        .voice-header {
-            display: flex; justify-content: space-between; align-items: center; padding: 12px 20px;
-            background: rgba(0, 243, 255, 0.1); border-bottom: 1px solid rgba(0, 243, 255, 0.2);
-        }
-        .voice-header span { font-size: 0.9rem; font-weight: bold; color: var(--neon-blue); }
-        .toggle-btn { background: transparent; border: none; color: #fff; padding: 0; font-size: 1.2rem; cursor: pointer; width: auto;}
-        .voice-content { padding: 20px; font-size: 1.1rem; color: #fff; min-height: 80px; text-align: center; font-style: italic; }
-        .voice-monitor.minimized .voice-content { display: none; }
 
-        .lyrics-center {
-            flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            margin: 20px 0; overflow: hidden;
+        .lyric-line {
+            font-size: 2.2rem; font-weight: 700; color: rgba(255,255,255,0.3); text-align: center;
+            transition: all 0.3s; max-width: 90%; white-space: pre-wrap; line-height: 1.4;
         }
-        .lyrics-title {
-            color: var(--neon-blue); font-size: 1.5rem; margin-bottom: 20px; text-shadow: 0 0 15px var(--neon-blue);
-            text-align: center; background: rgba(0,0,0,0.6); padding: 8px 25px; border-radius: 30px; border: 1px solid rgba(0, 243, 255, 0.3);
-        }
-        .lyrics-box {
-            width: 100%; max-width: 900px; height: 50vh; overflow-y: auto; text-align: center; font-size: 2rem;
-            line-height: 1.8; padding: 20px; white-space: pre-wrap; color: #fff; font-weight: 900;
-            text-shadow: 2px 2px 4px #000, 0 0 15px rgba(255,255,255,0.4);
-        }
-        .lyrics-box::-webkit-scrollbar { width: 8px; }
-        .lyrics-box::-webkit-scrollbar-thumb { background: var(--neon-pink); border-radius: 4px; }
 
-        .bottom-bar { text-align: center; padding-bottom: 20px; }
-        .btn-stop { background: rgba(255, 0, 60, 0.1); border: 2px solid #ff003c; color: #fff; width: auto; padding: 15px 40px; }
-        .btn-stop:hover { background: #ff003c; box-shadow: 0 0 30px #ff003c; transform: scale(1.05); }
+        .lyric-line.active {
+            font-size: 3rem; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.5);
+            transform: scale(1.1);
+        }
+
+        /* Palabras individuales para retroalimentación */
+        .word { display: inline-block; transition: color 0.2s, text-shadow 0.2s; margin-right: 8px; }
+        .word.matched {
+            color: var(--gold); text-shadow: 0 0 15px var(--gold); transform: translateY(-3px);
+        }
+
+        .controls { text-align: center; padding: 20px; }
+        .btn-stop {
+            background: transparent; border: 2px solid #ff0055; color: #ff0055;
+            padding: 15px 40px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-stop:hover { background: #ff0055; color: #fff; box-shadow: 0 0 20px #ff0055; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- INICIO -->
+    <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
-        <div class="brand-container">
-            <h1 class="title">Neon Voice</h1>
-            <p class="subtitle">Smart Karaoke System</p>
-        </div>
-
+        <h1 class="title">Neon Voice Pro</h1>
         <div class="input-box">
             <div class="input-group">
-                <label>URL DE YOUTUBE</label>
-                <input type="text" id="url-input" placeholder="Pega el link aquí..." autocomplete="off">
+                <input type="text" id="url-input" placeholder="🔗 Pega el link de YouTube aquí..." autocomplete="off">
             </div>
-            
-            <div class="auto-fields">
-                <div class="input-group" style="flex: 1;">
-                    <label>ARTISTA</label>
-                    <input type="text" id="artist-input" placeholder="Ej: Bad Bunny">
-                </div>
-                <div class="input-group" style="flex: 1;">
-                    <label>CANCIÓN</label>
-                    <input type="text" id="song-input" placeholder="Ej: Dakiti">
-                </div>
-            </div>
-
-            <button id="start-btn" class="btn-start">🎤 Empezar a Cantar</button>
+            <button id="start-btn" class="btn-start">🎤 Iniciar Karaoke</button>
             <div id="setup-msg" class="status-msg"></div>
         </div>
     </div>
 
-    <!-- KARAOKE -->
+    <!-- PANTALLA KARAOKE -->
     <div id="karaoke-screen" class="screen">
         <div class="video-bg"><div id="youtube-player"></div></div>
         <div class="overlay"></div>
 
-        <div class="karaoke-ui">
+        <div class="karaoke-container">
             <div class="top-bar">
                 <div class="score-board">
-                    <div class="score-title">PUNTUACIÓN</div>
+                    <div class="score-title">PUNTOS</div>
                     <div class="score-number" id="score-display">0</div>
                 </div>
+                <div id="feedback-badge" class="feedback-badge">¡PERFECTO!</div>
+                <div style="width: 150px;"></div> <!-- Spacer -->
+            </div>
 
-                <div class="voice-monitor" id="voice-window">
-                    <div class="voice-header">
-                        <span>🎙️ Monitor en Vivo</span>
-                        <button class="toggle-btn" id="toggle-voice-btn">➖</button>
-                    </div>
-                    <div class="voice-content" id="voice-feedback">Esperando voz...</div>
+            <div class="lyrics-viewport">
+                <div class="lyrics-scroller" id="lyrics-scroller">
+                    <!-- Las letras se inyectarán aquí -->
                 </div>
             </div>
 
-            <div class="lyrics-center">
-                <div class="lyrics-title" id="lyrics-title">Preparando...</div>
-                <div class="lyrics-box" id="lyrics-box">Cargando letra...</div>
-            </div>
-
-            <div class="bottom-bar">
-                <button id="stop-btn" class="btn-stop">Finalizar Sesión</button>
+            <div class="controls">
+                <button id="stop-btn" class="btn-stop">Terminar Sesión</button>
             </div>
         </div>
     </div>
 
     <script src="https://www.youtube.com/iframe_api"></script>
-
+    
     <script>
-        let player, recognition, score = 0, isPlaying = false;
-        let lyricsWordsSet = new Set(); 
-        let autoFetchTimeout;
+        // --- ESTADO GLOBAL ---
+        let player, recognition;
+        let score = 0;
+        let isPlaying = false;
+        let parsedLyrics = []; // [{ time: 12.5, words: [{text: "Hola", matched: false}] }]
+        let activeLineIndex = -1;
+        let animationFrameId;
 
+        // --- DOM ---
         const ui = {
-            home: document.getElementById('home-screen'), karaoke: document.getElementById('karaoke-screen'),
-            url: document.getElementById('url-input'), artist: document.getElementById('artist-input'),
-            song: document.getElementById('song-input'), startBtn: document.getElementById('start-btn'),
-            stopBtn: document.getElementById('stop-btn'), score: document.getElementById('score-display'),
-            feedback: document.getElementById('voice-feedback'), voiceWin: document.getElementById('voice-window'),
-            toggleVoice: document.getElementById('toggle-voice-btn'), lyricsBox: document.getElementById('lyrics-box'),
-            lyricsTitle: document.getElementById('lyrics-title'), msg: document.getElementById('setup-msg')
+            home: document.getElementById('home-screen'),
+            karaoke: document.getElementById('karaoke-screen'),
+            url: document.getElementById('url-input'),
+            startBtn: document.getElementById('start-btn'),
+            stopBtn: document.getElementById('stop-btn'),
+            msg: document.getElementById('setup-msg'),
+            scroller: document.getElementById('lyrics-scroller'),
+            score: document.getElementById('score-display'),
+            badge: document.getElementById('feedback-badge')
         };
 
-        // --- AUTODETECCIÓN DE ARTISTA Y CANCIÓN ---
+        // --- 1. EXTRACCIÓN Y BÚSQUEDA ---
         ui.url.addEventListener('input', () => {
-            clearTimeout(autoFetchTimeout);
             const url = ui.url.value.trim();
-            if (extractVideoID(url)) {
-                ui.msg.innerText = "🔍 Analizando video...";
-                autoFetchTimeout = setTimeout(() => fetchVideoDetails(url), 800);
+            const vId = extractVideoID(url);
+            if(vId) {
+                ui.msg.style.color = "var(--neon-blue)";
+                ui.msg.innerText = "Buscando información del video...";
+                fetchVideoTitle(url);
             }
         });
 
-        async function fetchVideoDetails(url) {
-            try {
-                const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
-                const data = await res.json();
-                if (data.title) {
-                    ui.msg.innerText = "✅ Título detectado";
-                    parseVideoTitle(data.title);
-                }
-            } catch (e) { ui.msg.innerText = "⚠️ Rellénalo manualmente."; }
-        }
-
-        function parseVideoTitle(title) {
-            let clean = title.replace(/\[.*?\]|\(.*?\)/g, '').trim();
-            clean = clean.replace(/(official|music|video|lyric|lyrics|audio|hd)/gi, '').trim();
-            clean = clean.replace(/ft\..*|feat\..*/gi, '').trim();
-            
-            if (clean.includes('-')) {
-                const parts = clean.split('-');
-                ui.artist.value = parts[0].trim();
-                ui.song.value = parts[1].trim();
-            } else {
-                ui.song.value = clean;
-                ui.artist.value = "";
-            }
-        }
-
-        // --- UTILIDADES ---
         function extractVideoID(url) {
             const match = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        function normalizeText(text) {
-            return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"?¿¡!\[\]]/g,"").trim();
+        async function fetchVideoTitle(url) {
+            try {
+                const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                if (data.title) {
+                    ui.msg.innerText = "¡Canción detectada! Lista para buscar letra.";
+                    ui.url.dataset.title = data.title; // Guardamos el título para buscarlo después
+                }
+            } catch (e) {
+                ui.msg.innerText = "Listo para iniciar (Búsqueda inteligente activada).";
+            }
         }
 
-        // --- UI ---
-        ui.toggleVoice.addEventListener('click', () => {
-            ui.voiceWin.classList.toggle('minimized');
-            ui.toggleVoice.innerText = ui.voiceWin.classList.contains('minimized') ? '➕' : '➖';
-        });
+        function cleanTitle(title) {
+            let clean = title.replace(/\[.*?\]|\(.*?\)/g, '').trim();
+            clean = clean.replace(/(official|music|video|lyric|lyrics|audio|hd)/gi, '').trim();
+            return clean;
+        }
 
-        // --- YOUTUBE API ---
+        async function fetchLyrics(query) {
+            ui.scroller.innerHTML = "<div class='lyric-line active'>Buscando letra sincronizada... ⏳</div>";
+            parsedLyrics = [];
+            
+            try {
+                const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(cleanTitle(query))}`);
+                const data = await res.json();
+                
+                if (data && data.length > 0) {
+                    // Buscar el primer resultado que tenga letras sincronizadas (LRC)
+                    const match = data.find(song => song.syncedLyrics);
+                    
+                    if (match && match.syncedLyrics) {
+                        parseLRC(match.syncedLyrics);
+                        renderLyrics();
+                        return true;
+                    } else if (data[0].plainLyrics) {
+                        // Fallback a texto normal si no hay sincronizado
+                        ui.scroller.innerHTML = "<div class='lyric-line active' style='font-size: 1.5rem'>" + data[0].plainLyrics + "</div>";
+                        return false;
+                    }
+                }
+                throw new Error("No hay letra");
+            } catch (e) {
+                ui.scroller.innerHTML = "<div class='lyric-line active'>Letra no encontrada. ¡Canta a capela! 🎤</div>";
+                return false;
+            }
+        }
+
+        // --- 2. PARSEO LRC (Letras Sincronizadas) ---
+        function parseLRC(lrcString) {
+            const lines = lrcString.split('\n');
+            const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+            
+            lines.forEach(line => {
+                const match = line.match(regex);
+                if (match) {
+                    const min = parseInt(match[1]);
+                    const sec = parseInt(match[2]);
+                    const ms = parseInt(match[3].padEnd(3, '0'));
+                    const time = (min * 60) + sec + (ms / 1000);
+                    const text = match[4].trim();
+                    
+                    if (text) {
+                        // Separar la línea en palabras evaluables
+                        const wordsArr = text.split(/\s+/).map(w => ({
+                            original: w,
+                            clean: normalize(w),
+                            matched: false
+                        }));
+                        parsedLyrics.push({ time, text, words: wordsArr });
+                    }
+                }
+            });
+        }
+
+        function normalize(str) {
+            return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+        }
+
+        // --- 3. RENDERIZADO Y SINCRONIZACIÓN ---
+        function renderLyrics() {
+            ui.scroller.innerHTML = "";
+            parsedLyrics.forEach((line, i) => {
+                const div = document.createElement('div');
+                div.className = 'lyric-line';
+                div.id = `line-${i}`;
+                
+                // Crear spans para cada palabra
+                line.words.forEach((w, wordIndex) => {
+                    const span = document.createElement('span');
+                    span.className = 'word';
+                    span.id = `word-${i}-${wordIndex}`;
+                    span.innerText = w.original;
+                    div.appendChild(span);
+                });
+                
+                ui.scroller.appendChild(div);
+            });
+        }
+
+        function syncLoop() {
+            if (!isPlaying || !player || typeof player.getCurrentTime !== 'function') return;
+            
+            const currentTime = player.getCurrentTime();
+            let newActiveIndex = -1;
+
+            // Encontrar la línea actual (la que tiene el timestamp menor o igual al tiempo actual)
+            for (let i = parsedLyrics.length - 1; i >= 0; i--) {
+                if (currentTime >= parsedLyrics[i].time - 0.3) { // 0.3s de anticipación
+                    newActiveIndex = i;
+                    break;
+                }
+            }
+
+            if (newActiveIndex !== activeLineIndex && newActiveIndex !== -1) {
+                // Evaluar la línea que acaba de terminar (si existía)
+                if(activeLineIndex !== -1) evaluateLineCompletion(activeLineIndex);
+
+                activeLineIndex = newActiveIndex;
+                
+                // Actualizar UI
+                document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                const activeEl = document.getElementById(`line-${activeLineIndex}`);
+                if (activeEl) {
+                    activeEl.classList.add('active');
+                    
+                    // Efecto teleprompter (centrar la línea activa)
+                    const offset = activeEl.offsetTop - (ui.scroller.parentElement.offsetHeight / 2) + (activeEl.offsetHeight / 2);
+                    ui.scroller.style.transform = `translateY(-${Math.max(0, offset)}px)`;
+                }
+            }
+
+            animationFrameId = requestAnimationFrame(syncLoop);
+        }
+
+        // --- 4. EVALUACIÓN DE VOZ EN TIEMPO REAL ---
+        function setupSpeech() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { alert("Navegador no compatible con voz. Usa Chrome."); return false; }
+
+            recognition = new SR();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'es-ES';
+
+            recognition.onresult = (e) => {
+                let transcript = "";
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    transcript += e.results[i][0].transcript + " ";
+                }
+                
+                // Comparar lo escuchado con la línea actual (o la anterior por si hay lag)
+                checkVoiceMatch(transcript.trim());
+            };
+            
+            recognition.onend = () => { if (isPlaying) recognition.start(); };
+            return true;
+        }
+
+        function checkVoiceMatch(spokenText) {
+            if (activeLineIndex === -1 || parsedLyrics.length === 0) return;
+
+            const spokenWords = spokenText.split(/\s+/).map(w => normalize(w));
+            
+            // Revisamos la línea actual y la anterior (para perdonar retrasos)
+            [activeLineIndex, activeLineIndex - 1].forEach(lineIdx => {
+                if (lineIdx < 0) return;
+                
+                const line = parsedLyrics[lineIdx];
+                
+                line.words.forEach((lineWord, wIdx) => {
+                    // Si la palabra hablada incluye la palabra de la letra, y no ha sido marcada
+                    if (!lineWord.matched && lineWord.clean.length > 2 && spokenWords.some(sw => sw.includes(lineWord.clean))) {
+                        lineWord.matched = true;
+                        score += 20;
+                        ui.score.innerText = score;
+                        
+                        // Iluminar palabra
+                        const wordEl = document.getElementById(`word-${lineIdx}-${wIdx}`);
+                        if (wordEl) wordEl.classList.add('matched');
+                    }
+                });
+            });
+        }
+
+        function evaluateLineCompletion(lineIdx) {
+            const line = parsedLyrics[lineIdx];
+            const evaluableWords = line.words.filter(w => w.clean.length > 2);
+            if (evaluableWords.length === 0) return;
+
+            const matchedWords = evaluableWords.filter(w => w.matched).length;
+            const percentage = matchedWords / evaluableWords.length;
+
+            showBadge(percentage);
+        }
+
+        function showBadge(percentage) {
+            ui.badge.className = 'feedback-badge'; // reset
+            if (percentage >= 0.8) {
+                ui.badge.innerText = "¡PERFECTO! 🔥";
+                ui.badge.classList.add('perfect');
+                score += 50;
+            } else if (percentage >= 0.4) {
+                ui.badge.innerText = "¡BIEN! 👍";
+                ui.badge.classList.add('good');
+            } else {
+                return; // No mostramos nada si falló la mayoría
+            }
+
+            ui.score.innerText = score;
+            ui.badge.classList.add('show');
+            setTimeout(() => ui.badge.classList.remove('show'), 1500);
+        }
+
+        // --- 5. YOUTUBE API ---
         function onYouTubeIframeAPIReady() {}
         function initYouTube(videoId) {
             if (player) { player.loadVideoById(videoId); } 
             else {
                 player = new YT.Player('youtube-player', {
-                    videoId: videoId, playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'modestbranding': 1 },
+                    videoId: videoId,
+                    playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'modestbranding': 1 },
                     events: { 'onStateChange': (e) => {
-                        if (e.data === YT.PlayerState.PLAYING && !isPlaying) startRecognition();
-                        else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) stopRecognition();
+                        if (e.data === YT.PlayerState.PLAYING) {
+                            if (!isPlaying) {
+                                isPlaying = true;
+                                try { recognition.start(); } catch(e){}
+                                syncLoop();
+                            }
+                        }
+                        else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) {
+                            isPlaying = false;
+                            cancelAnimationFrame(animationFrameId);
+                            if (recognition) recognition.stop();
+                        }
                     }}
                 });
             }
         }
 
-        // --- RECONOCIMIENTO DE VOZ ---
-        function setupSpeechRecognition() {
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) { alert("Usa Chrome o Edge."); return false; }
-
-            recognition = new SR();
-            recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'es-ES';
-
-            recognition.onstart = () => { isPlaying = true; ui.feedback.innerHTML = "Escuchando... 🎵"; ui.feedback.style.color = "var(--neon-pink)"; };
-            recognition.onresult = (e) => {
-                let interim = '', final = '';
-                for (let i = e.resultIndex; i < e.results.length; ++i) {
-                    if (e.results[i].isFinal) { final += e.results[i][0].transcript; evaluateSpeech(e.results[i][0].transcript); } 
-                    else { interim += e.results[i][0].transcript; }
-                }
-                if (interim) ui.feedback.innerHTML = interim;
-                else if (final) { ui.feedback.innerHTML = final; setTimeout(() => { if(isPlaying) ui.feedback.innerHTML = "Escuchando... 🎵"; }, 2000); }
-            };
-            recognition.onerror = (e) => { if (e.error === 'not-allowed') alert("Permite el micrófono."); };
-            recognition.onend = () => { if (isPlaying && player?.getPlayerState() === YT.PlayerState.PLAYING) recognition.start(); };
-            return true;
-        }
-        function startRecognition() { if (recognition && !isPlaying) try { recognition.start(); } catch(e){} }
-        function stopRecognition() { isPlaying = false; if (recognition) { recognition.stop(); ui.feedback.innerHTML = "Pausado ⏸️"; ui.feedback.style.color = "#ccc"; } }
-
-        // --- BUSQUEDA DE LETRAS CON LRCLIB ---
-        async function fetchLyrics(artist, song) {
-            lyricsWordsSet.clear();
-            if (!song) {
-                ui.lyricsTitle.innerText = "Modo Libre";
-                ui.lyricsBox.innerHTML = "Sin letra. ¡Sigue cantando!";
-                return;
-            }
-
-            ui.lyricsTitle.innerText = artist ? `${song} - ${artist}` : song;
-            ui.lyricsBox.innerHTML = "Buscando letra en LRCLIB... ⏳";
-
-            try {
-                // Usamos el endpoint de busqueda de LRCLIB
-                const searchUrl = `https://lrclib.net/api/search?track_name=${encodeURIComponent(song)}${artist ? `&artist_name=${encodeURIComponent(artist)}` : ''}`;
-                const res = await fetch(searchUrl);
-                const results = await res.json();
-
-                if (results && results.length > 0) {
-                    // Tomamos el mejor resultado
-                    const bestMatch = results[0];
-                    
-                    // LRCLIB devuelve plainLyrics o syncedLyrics. Preferimos plainLyrics para visualización simple.
-                    // Si solo hay syncedLyrics, removemos los timestamps.
-                    let lyricsText = "";
-                    if (bestMatch.plainLyrics) {
-                        lyricsText = bestMatch.plainLyrics;
-                    } else if (bestMatch.syncedLyrics) {
-                        // Limpiar timestamps [00:12.34]
-                        lyricsText = bestMatch.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, '');
-                    }
-
-                    if (lyricsText) {
-                        ui.lyricsBox.innerText = lyricsText;
-                        
-                        // Guardar palabras para el sistema de puntos
-                        const words = normalizeText(lyricsText).split(/\s+/);
-                        words.forEach(w => { if (w.length > 3) lyricsWordsSet.add(w); });
-                    } else {
-                        throw new Error("Instrumental o sin letra");
-                    }
-
-                } else {
-                    throw new Error("No encontrada");
-                }
-            } catch (err) {
-                ui.lyricsBox.innerHTML = "No se encontró la letra. ❌<br><br>¡Canta con el alma! El micrófono seguirá evaluándote.";
-            }
-        }
-
-        function evaluateSpeech(text) {
-            const words = normalizeText(text).split(/\s+/);
-            let match = false;
-            words.forEach(w => {
-                if (w.length > 3 && lyricsWordsSet.has(w)) { score += 50; match = true; } 
-                else if (lyricsWordsSet.size === 0 && w.length > 2) { score += 10; match = true; }
-            });
-            if (match) {
-                ui.score.innerText = score;
-                ui.score.style.transform = 'scale(1.4)';
-                setTimeout(() => ui.score.style.transform = 'scale(1)', 150);
-            }
-        }
-
-        // --- FLUJO PRINCIPAL ---
+        // --- 6. FLUJO PRINCIPAL ---
         ui.startBtn.addEventListener('click', async () => {
             const vId = extractVideoID(ui.url.value);
-            if (!vId) return (ui.msg.innerText = "❌ URL de YouTube inválida.");
+            if (!vId) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ URL inválida."; return; }
+
+            const queryTitle = ui.url.dataset.title || ui.url.value; 
 
             ui.msg.innerText = "Autorizando micrófono... 🎙️";
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(t => t.stop());
                 
-                if (!setupSpeechRecognition()) return;
+                if (!setupSpeech()) return;
 
                 ui.home.classList.remove('active');
                 ui.karaoke.classList.add('active');
                 
+                // Reset estado
                 score = 0; ui.score.innerText = score;
+                activeLineIndex = -1;
+                ui.scroller.style.transform = `translateY(0)`;
+                
                 initYouTube(vId);
-                fetchLyrics(ui.artist.value.trim(), ui.song.value.trim());
-            } catch (err) { ui.msg.innerText = "❌ Permite el micrófono."; }
+                fetchLyrics(queryTitle);
+            } catch (err) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ Permite el micrófono."; }
         });
 
         ui.stopBtn.addEventListener('click', () => {
-            stopRecognition();
+            isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            if (recognition) recognition.stop();
             if (player?.stopVideo) player.stopVideo();
+            
             alert(`🎤 ¡Sesión terminada!\nPuntuación total: ${score}`);
             ui.karaoke.classList.remove('active');
             ui.home.classList.add('active');
+            ui.url.value = "";
             ui.msg.innerText = "";
         });
     </script>
