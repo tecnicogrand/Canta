@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neon Voice Pro - Immersive Karaoke</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;800;900&display=swap" rel="stylesheet">
+    <link href="[https://fonts.googleapis.com/css2?family=Montserrat:wght@400;800;900&display=swap](https://fonts.googleapis.com/css2?family=Montserrat:wght@400;800;900&display=swap)" rel="stylesheet">
     
     <style>
         :root {
@@ -26,7 +26,15 @@
         .screen.active { display: flex; animation: fadeIn 0.5s ease-out; }
 
         /* --- PANTALLA INICIO --- */
-        #home-screen { background: radial-gradient(circle at 50% 50%, #151520 0%, #050505 100%); }
+        #home-screen { background: radial-gradient(circle at 50% 50%, #151520 0%, #050505 100%); position: relative; }
+        
+        .version-tag {
+            position: absolute; top: 20px; right: 20px;
+            color: var(--neon-blue); font-size: 0.9rem; font-weight: bold;
+            border: 1px solid var(--neon-blue); padding: 5px 10px; border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+
         .title {
             font-size: 5rem; font-weight: 900; text-transform: uppercase;
             background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
@@ -169,6 +177,27 @@
         .btn-stop { border-color: #ff0055; color: #ff0055; }
         .btn-stop:hover { background: #ff0055; color: #fff; box-shadow: 0 0 20px #ff0055; }
 
+        /* --- PANTALLA RESULTADOS --- */
+        #results-screen { background: radial-gradient(circle at 50% 50%, #151520 0%, #050505 100%); }
+        .results-box {
+            background: rgba(20, 20, 30, 0.8); backdrop-filter: blur(20px);
+            border: 1px solid var(--neon-pink); border-radius: 20px;
+            padding: 50px; width: 100%; max-width: 600px; text-align: center;
+            box-shadow: 0 0 50px rgba(255, 0, 127, 0.3);
+        }
+        
+        .results-title { font-size: 3rem; color: #fff; margin-bottom: 20px; text-transform: uppercase; }
+        .results-score-label { font-size: 1.2rem; color: #aaa; letter-spacing: 2px; margin-top: 20px;}
+        .results-score { font-size: 5rem; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue); margin-bottom: 10px;}
+        .results-stats { font-size: 1.5rem; color: var(--gold); margin-bottom: 30px; font-weight: bold;}
+        
+        .btn-home {
+            padding: 15px 40px; border: none; border-radius: 12px; font-size: 1.2rem;
+            font-weight: bold; cursor: pointer; color: #000; background: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4); transition: transform 0.2s;
+        }
+        .btn-home:hover { transform: scale(1.05); }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -176,12 +205,13 @@
 
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
+        <div class="version-tag">v1.0</div>
         <h1 class="title">Neon Voice Pro</h1>
         <div class="input-box">
             <div class="input-group">
                 <input type="text" id="url-input" placeholder="🔗 Pega el link de YouTube aquí..." autocomplete="off">
             </div>
-            <button id="start-btn" class="btn-start">🎤 Iniciar Karaoke Automático</button>
+            <button id="start-btn" class="btn-start">🎤 Iniciar Karaoke</button>
             <div id="setup-msg" class="status-msg"></div>
         </div>
     </div>
@@ -221,13 +251,29 @@
             </div>
         </div>
     </div>
+    
+    <!-- PANTALLA RESULTADOS -->
+    <div id="results-screen" class="screen">
+        <div class="results-box">
+            <h2 class="results-title">¡Presentación Terminada! 🎤</h2>
+            
+            <div class="results-score-label">PUNTUACIÓN TOTAL</div>
+            <div class="results-score" id="final-score">0</div>
+            
+            <div class="results-stats" id="final-stats">Precisión: 0%</div>
+            
+            <button id="home-btn" class="btn-home">Volver al Inicio</button>
+        </div>
+    </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="[https://www.youtube.com/iframe_api](https://www.youtube.com/iframe_api)"></script>
     
     <script>
         // --- ESTADO GLOBAL ---
         let player, recognition;
         let score = 0;
+        let totalWordsEvaluated = 0;
+        let totalWordsMatched = 0;
         let isPlaying = false;
         let parsedLyrics = []; 
         let activeLineIndex = -1;
@@ -235,14 +281,23 @@
 
         // --- DOM ---
         const ui = {
-            home: document.getElementById('home-screen'), karaoke: document.getElementById('karaoke-screen'),
-            url: document.getElementById('url-input'), startBtn: document.getElementById('start-btn'),
-            pauseBtn: document.getElementById('pause-btn'), stopBtn: document.getElementById('stop-btn'), 
-            msg: document.getElementById('setup-msg'), scroller: document.getElementById('lyrics-scroller'), 
-            score: document.getElementById('score-display'), badge: document.getElementById('feedback-badge'),
+            home: document.getElementById('home-screen'), 
+            karaoke: document.getElementById('karaoke-screen'),
+            results: document.getElementById('results-screen'),
+            url: document.getElementById('url-input'), 
+            startBtn: document.getElementById('start-btn'),
+            pauseBtn: document.getElementById('pause-btn'), 
+            stopBtn: document.getElementById('stop-btn'), 
+            homeBtn: document.getElementById('home-btn'),
+            msg: document.getElementById('setup-msg'), 
+            scroller: document.getElementById('lyrics-scroller'), 
+            score: document.getElementById('score-display'), 
+            badge: document.getElementById('feedback-badge'),
             btnToggleVoice: document.getElementById('btn-toggle-voice'),
             voiceWindow: document.getElementById('voice-monitor-window'),
-            voiceTranscript: document.getElementById('voice-transcript')
+            voiceTranscript: document.getElementById('voice-transcript'),
+            finalScore: document.getElementById('final-score'),
+            finalStats: document.getElementById('final-stats')
         };
 
         // --- CONTROLES DE INTERFAZ ---
@@ -256,6 +311,13 @@
             } else if (state === YT.PlayerState.PAUSED) {
                 player.playVideo();
             }
+        });
+        
+        ui.homeBtn.addEventListener('click', () => {
+            ui.results.classList.remove('active');
+            ui.home.classList.add('active');
+            ui.url.value = "";
+            ui.msg.innerText = "";
         });
 
         // --- 1. EXTRACCIÓN Y BÚSQUEDA ---
@@ -275,7 +337,7 @@
 
         async function fetchVideoTitle(url) {
             try {
-                const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+                const res = await fetch(`[https://noembed.com/embed?url=$](https://noembed.com/embed?url=$){encodeURIComponent(url)}`);
                 const data = await res.json();
                 if (data.title) {
                     ui.msg.innerText = "✅ Título procesado. Listo para buscar.";
@@ -311,12 +373,12 @@
             const searchUrls = [];
             
             if (artist && track) {
-                searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(track + " " + artist)}`);
-                searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(normalizeStr(track) + " " + normalizeStr(artist))}`);
-                searchUrls.push(`https://lrclib.net/api/search?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`);
+                searchUrls.push(`[https://lrclib.net/api/search?q=$](https://lrclib.net/api/search?q=$){encodeURIComponent(track + " " + artist)}`);
+                searchUrls.push(`[https://lrclib.net/api/search?q=$](https://lrclib.net/api/search?q=$){encodeURIComponent(normalizeStr(track) + " " + normalizeStr(artist))}`);
+                searchUrls.push(`[https://lrclib.net/api/search?track_name=$](https://lrclib.net/api/search?track_name=$){encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`);
             }
-            searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(cleanTitle)}`);
-            if (track) searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(track)}`);
+            searchUrls.push(`[https://lrclib.net/api/search?q=$](https://lrclib.net/api/search?q=$){encodeURIComponent(cleanTitle)}`);
+            if (track) searchUrls.push(`[https://lrclib.net/api/search?q=$](https://lrclib.net/api/search?q=$){encodeURIComponent(track)}`);
 
             let match = null;
             for (let i = 0; i < searchUrls.length; i++) {
@@ -368,7 +430,6 @@
                 }
             });
 
-            // Estimar duración de cada palabra para el llenado de color (wipe)
             for (let i = 0; i < tempLines.length; i++) {
                 const currentLine = tempLines[i];
                 const nextLineTime = (i + 1 < tempLines.length) ? tempLines[i+1].time : currentLine.time + 5; 
@@ -436,7 +497,6 @@
 
                 activeLineIndex = newActiveIndex;
                 
-                // Actualizar las clases para mostrar solo 3 líneas (Pasada, Actual, Siguiente)
                 const allLines = document.querySelectorAll('.lyric-line');
                 allLines.forEach((el, index) => {
                     el.className = 'lyric-line'; // Reset a oculto
@@ -449,7 +509,6 @@
                     }
                 });
 
-                // Centrar la pantalla basándose en el elemento activo
                 const activeEl = document.getElementById(`line-${activeLineIndex}`);
                 if (activeEl) {
                     const offset = activeEl.offsetTop - (ui.scroller.parentElement.offsetHeight / 2) + (activeEl.offsetHeight / 2);
@@ -457,7 +516,7 @@
                 }
             }
 
-            // Animar el color de las palabras (Wipe effect)
+            // Animar el color de las palabras
             if (activeLineIndex !== -1) {
                 const line = parsedLyrics[activeLineIndex];
                 line.words.forEach((w, wIdx) => {
@@ -519,6 +578,7 @@
                         lineWord.matched = true;
                         score += 20;
                         ui.score.innerText = score;
+                        totalWordsMatched++;
                         
                         const wordWrapEl = document.getElementById(`word-wrap-${lineIdx}-${wIdx}`);
                         if (wordWrapEl) wordWrapEl.classList.add('voice-matched');
@@ -531,6 +591,8 @@
             const line = parsedLyrics[lineIdx];
             const evaluableWords = line.words.filter(w => w.clean.length > 2);
             if (evaluableWords.length === 0) return;
+
+            totalWordsEvaluated += evaluableWords.length;
 
             const matchedWords = evaluableWords.filter(w => w.matched).length;
             const percentage = matchedWords / evaluableWords.length;
@@ -548,6 +610,23 @@
             ui.score.innerText = score;
             ui.badge.classList.add('show');
             setTimeout(() => ui.badge.classList.remove('show'), 1500);
+        }
+        
+        function showResults() {
+            ui.karaoke.classList.remove('active');
+            ui.results.classList.add('active');
+            
+            ui.finalScore.innerText = score;
+            
+            let accuracy = 0;
+            if(totalWordsEvaluated > 0) {
+                accuracy = Math.round((totalWordsMatched / totalWordsEvaluated) * 100);
+            }
+            
+            ui.finalStats.innerText = `Precisión: ${accuracy}%`;
+            if(accuracy >= 80) ui.finalStats.innerText += " 🌟 ¡Excelente!";
+            else if(accuracy >= 50) ui.finalStats.innerText += " 👍 ¡Buen esfuerzo!";
+            else ui.finalStats.innerText += " 🎤 ¡Sigue practicando!";
         }
 
         // --- 5. YOUTUBE API Y SINCRONIZADOR GLOBAL ---
@@ -577,6 +656,11 @@
                             isPlaying = false;
                             cancelAnimationFrame(animationFrameId);
                             if (recognition) recognition.stop();
+                            
+                            // Evaluar la última línea que quedó pendiente
+                            if(activeLineIndex !== -1) evaluateLineCompletion(activeLineIndex);
+                            
+                            showResults();
                         }
                     }}
                 });
@@ -600,7 +684,11 @@
                 ui.home.classList.remove('active');
                 ui.karaoke.classList.add('active');
                 
-                score = 0; ui.score.innerText = score;
+                score = 0; 
+                totalWordsEvaluated = 0;
+                totalWordsMatched = 0;
+                
+                ui.score.innerText = score;
                 activeLineIndex = -1;
                 ui.scroller.style.transform = `translateY(0)`;
                 ui.voiceTranscript.innerText = "Esperando voz...";
@@ -618,13 +706,13 @@
             if (recognition) recognition.stop();
             if (player?.stopVideo) player.stopVideo();
             
-            alert(`🎤 ¡Sesión terminada!\nPuntuación total: ${score}`);
-            ui.karaoke.classList.remove('active');
-            ui.home.classList.add('active');
-            ui.url.value = "";
-            ui.msg.innerText = "";
+            // Evaluar la última línea que quedó pendiente al detener manualmente
+            if(activeLineIndex !== -1) evaluateLineCompletion(activeLineIndex);
+            
             ui.voiceWindow.classList.remove('show');
+            showResults();
         });
     </script>
 </body>
 </html>
+```eof
