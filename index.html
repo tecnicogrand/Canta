@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Voice Karaoke - Immersive</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>Neon Voice Karaoke - Pro Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --bg-dark: #090a0f;
             --neon-blue: #00f3ff;
             --neon-pink: #ff00ea;
+            --neon-purple: #9d00ff;
             --text-light: #e0e0e0;
             --panel-bg: rgba(15, 15, 20, 0.65);
         }
@@ -26,7 +27,7 @@
             background-color: var(--bg-dark);
             color: var(--text-light);
             min-height: 100vh;
-            overflow: hidden; /* Evitar scroll en toda la página */
+            overflow: hidden; 
         }
 
         /* --- PANTALLAS --- */
@@ -47,350 +48,364 @@
             animation: fadeIn 0.6s ease-out;
         }
 
-        /* --- PANTALLA DE INICIO --- */
+        /* --- PANTALLA DE INICIO (NUEVO DISEÑO) --- */
         #home-screen {
-            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #090a0f 100%);
+            background: linear-gradient(135deg, #0f1016 0%, #1a1a2e 100%);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 243, 255, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(255, 0, 234, 0.08), transparent 25%);
+        }
+
+        .brand-container {
+            text-align: center;
+            margin-bottom: 40px;
         }
 
         h1.title {
-            font-size: 4rem;
+            font-size: 4.5rem;
             font-weight: 900;
-            color: #fff;
+            color: #ffffff;
             text-transform: uppercase;
-            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue), 0 0 40px var(--neon-pink);
-            margin-bottom: 10px;
-            text-align: center;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 30px var(--neon-blue), 0 0 60px var(--neon-purple);
+            margin-bottom: 5px;
         }
         
         .subtitle {
-            color: var(--neon-blue);
-            margin-bottom: 40px;
-            text-align: center;
-            font-weight: 400;
+            color: #8bb0c7;
+            font-size: 1.1rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
         }
 
+        /* Caja de Entrada Glassmorphism */
         .input-box {
-            background: rgba(20, 20, 30, 0.8);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
             padding: 40px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 243, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
             width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            backdrop-filter: blur(10px);
+            max-width: 550px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 
+                        inset 0 0 0 1px rgba(255,255,255,0.05),
+                        0 0 20px rgba(0, 243, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Brillo superior en la caja */
+        .input-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), var(--neon-pink), transparent);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: #15161f;
+            padding: 0 10px;
+            font-size: 0.8rem;
+            color: var(--neon-blue);
+            font-weight: 700;
+            border-radius: 10px;
+            z-index: 1;
         }
 
         input {
             width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #2a2a35;
-            background: rgba(0, 0, 0, 0.5);
+            padding: 18px 20px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
             color: white;
             font-size: 1.1rem;
             outline: none;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         input:focus {
             border-color: var(--neon-pink);
-            box-shadow: 0 0 15px rgba(255, 0, 234, 0.4);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 0, 234, 0.2), inset 0 0 10px rgba(255, 0, 234, 0.1);
         }
 
-        .helper-text { font-size: 0.85rem; color: #888; margin-top: -10px; }
+        .auto-fields {
+            display: flex;
+            gap: 15px;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+
+        .auto-fields:focus-within {
+            opacity: 1;
+        }
 
         button {
-            padding: 15px 30px;
+            width: 100%;
+            padding: 18px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 1.2rem;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
+            letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.3s;
             color: #fff;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-start {
             background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
-            box-shadow: 0 0 20px rgba(255, 0, 234, 0.5);
+            background-size: 200% 200%;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 0, 234, 0.4);
+            animation: gradientMove 3s ease infinite;
         }
 
-        .btn-start:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(0, 243, 255, 0.8); }
-        .status-msg { margin-top: 5px; color: #ffeb3b; text-align: center; height: 20px; font-weight: bold;}
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-        /* --- PANTALLA DE KARAOKE (IMMERSIVE) --- */
-        
-        /* Video de Fondo */
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 243, 255, 0.6);
+        }
+
+        .status-msg { margin-top: 15px; color: var(--neon-blue); text-align: center; height: 20px; font-weight: bold; font-size: 0.9rem;}
+
+        /* --- PANTALLA DE KARAOKE --- */
         .video-bg {
             position: fixed;
             top: 0; left: 0;
             width: 100vw; height: 100vh;
-            z-index: 1;
-            pointer-events: none; /* El usuario no puede hacer click al video */
-            overflow: hidden;
-            background: #000;
+            z-index: 1; pointer-events: none; overflow: hidden; background: #000;
         }
-
-        /* Truco para que el iframe actúe como "object-fit: cover" */
         .video-bg iframe {
-            width: 100vw;
-            height: 56.25vw; /* 16:9 ratio */
-            min-height: 100vh;
-            min-width: 177.77vh; /* 16:9 ratio */
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0.7; /* Ligeramente opaco para leer las letras */
+            width: 100vw; height: 56.25vw; min-height: 100vh; min-width: 177.77vh;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); opacity: 0.6;
         }
-
-        /* Capa oscura sobre el video para resaltar UI */
         .overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 100%);
             z-index: 2;
         }
 
-        /* Contenedor de la interfaz de karaoke */
         .karaoke-ui {
-            position: relative;
-            z-index: 3;
-            width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
+            position: relative; z-index: 3; width: 100%; height: 100%;
+            display: flex; flex-direction: column; padding: 20px;
         }
 
-        /* Barra Superior: Puntos y Monitor de Voz */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            width: 100%;
-        }
+        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; }
 
         .score-board {
-            background: var(--panel-bg);
-            padding: 10px 20px;
-            border-radius: 15px;
-            border: 1px solid var(--neon-pink);
-            backdrop-filter: blur(5px);
-            text-align: center;
+            background: rgba(10, 10, 15, 0.8); padding: 15px 30px;
+            border-radius: 20px; border: 1px solid var(--neon-pink);
+            backdrop-filter: blur(10px); text-align: center;
+            box-shadow: 0 0 20px rgba(255, 0, 234, 0.2);
         }
-        .score-title { font-size: 0.9rem; color: #ccc; }
+        .score-title { font-size: 0.9rem; color: #aaa; letter-spacing: 2px; }
         .score-number {
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: var(--neon-pink);
-            text-shadow: 0 0 15px var(--neon-pink);
-            transition: transform 0.2s;
+            font-size: 3rem; font-weight: 900; color: var(--neon-pink);
+            text-shadow: 0 0 20px var(--neon-pink); transition: transform 0.1s;
         }
 
-        /* Monitor de Voz (Ventana Pequeña) */
         .voice-monitor {
-            background: var(--panel-bg);
-            border: 1px solid var(--neon-blue);
-            border-radius: 15px;
-            backdrop-filter: blur(5px);
-            width: 300px;
-            transition: all 0.3s ease;
-            overflow: hidden;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            background: rgba(10, 10, 15, 0.8); border: 1px solid var(--neon-blue);
+            border-radius: 20px; backdrop-filter: blur(10px);
+            width: 320px; transition: all 0.3s ease; overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
         }
-        
         .voice-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            background: rgba(0, 243, 255, 0.1);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; background: rgba(0, 243, 255, 0.1);
             border-bottom: 1px solid rgba(0, 243, 255, 0.2);
         }
         .voice-header span { font-size: 0.9rem; font-weight: bold; color: var(--neon-blue); }
-        .toggle-btn {
-            background: transparent; border: none; color: #fff; 
-            padding: 0; font-size: 1.2rem; cursor: pointer;
-        }
-
-        .voice-content {
-            padding: 15px;
-            font-size: 1rem;
-            color: #fff;
-            min-height: 60px;
-            text-align: center;
-            font-style: italic;
-        }
-
+        .toggle-btn { background: transparent; border: none; color: #fff; padding: 0; font-size: 1.2rem; cursor: pointer; width: auto;}
+        .voice-content { padding: 20px; font-size: 1.1rem; color: #fff; min-height: 80px; text-align: center; font-style: italic; }
         .voice-monitor.minimized .voice-content { display: none; }
 
-        /* Letras Centrales */
         .lyrics-center {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            overflow: hidden;
+            flex-grow: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            margin: 20px 0; overflow: hidden;
         }
-
         .lyrics-title {
-            color: var(--neon-blue);
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            text-shadow: 0 0 10px var(--neon-blue);
-            text-align: center;
-            background: rgba(0,0,0,0.5);
-            padding: 5px 15px;
-            border-radius: 10px;
+            color: var(--neon-blue); font-size: 1.5rem; margin-bottom: 20px;
+            text-shadow: 0 0 15px var(--neon-blue); text-align: center;
+            background: rgba(0,0,0,0.6); padding: 8px 25px; border-radius: 30px;
+            border: 1px solid rgba(0, 243, 255, 0.3);
         }
-
         .lyrics-box {
-            width: 100%;
-            max-width: 800px;
-            height: 55vh;
-            overflow-y: auto;
-            text-align: center;
-            font-size: 1.8rem;
-            line-height: 1.8;
-            padding: 20px;
-            white-space: pre-wrap;
-            color: #fff;
-            font-weight: 700;
-            text-shadow: 2px 2px 4px #000, 0 0 10px rgba(255,255,255,0.5);
-            /* Scroll snap effect optional */
+            width: 100%; max-width: 900px; height: 50vh; overflow-y: auto;
+            text-align: center; font-size: 2rem; line-height: 1.8;
+            padding: 20px; white-space: pre-wrap; color: #fff;
+            font-weight: 900; text-shadow: 2px 2px 4px #000, 0 0 15px rgba(255,255,255,0.4);
         }
-
-        /* Scrollbar Neón */
         .lyrics-box::-webkit-scrollbar { width: 8px; }
         .lyrics-box::-webkit-scrollbar-thumb { background: var(--neon-pink); border-radius: 4px; }
-        .lyrics-box::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 4px;}
 
-        /* Botón Inferior */
-        .bottom-bar {
-            text-align: center;
-            padding-bottom: 10px;
-        }
-
+        .bottom-bar { text-align: center; padding-bottom: 20px; }
         .btn-stop {
-            background: rgba(255, 0, 60, 0.2);
-            border: 2px solid #ff003c;
-            color: #fff;
-            backdrop-filter: blur(5px);
+            background: rgba(255, 0, 60, 0.1); border: 2px solid #ff003c;
+            color: #fff; backdrop-filter: blur(5px); width: auto; padding: 15px 40px;
         }
-        .btn-stop:hover {
-            background: #ff003c;
-            box-shadow: 0 0 30px #ff003c;
-        }
+        .btn-stop:hover { background: #ff003c; box-shadow: 0 0 30px #ff003c; transform: scale(1.05); }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <!-- PANTALLA DE INICIO -->
     <div id="home-screen" class="screen active">
-        <h1 class="title">Neon Voice</h1>
-        <p class="subtitle">Experiencia de Karaoke Inmersiva</p>
+        <div class="brand-container">
+            <h1 class="title">Neon Voice</h1>
+            <p class="subtitle">Smart Karaoke System</p>
+        </div>
 
         <div class="input-box">
-            <div>
-                <input type="text" id="url-input" placeholder="URL de YouTube (Obligatorio)*">
-                <p class="helper-text">Ej: https://www.youtube.com/watch?v=...</p>
+            <div class="input-group">
+                <label>URL DE YOUTUBE</label>
+                <input type="text" id="url-input" placeholder="Pega el link aquí..." autocomplete="off">
             </div>
             
-            <div>
-                <!-- Campo combinado para ahorrar espacio -->
-                <input type="text" id="search-input" placeholder="Artista - Canción (Opcional)">
-                <p class="helper-text">Ej: Coldplay - Yellow (Separa con un guión para buscar la letra)</p>
+            <div class="auto-fields">
+                <div class="input-group" style="flex: 1;">
+                    <label>ARTISTA</label>
+                    <input type="text" id="artist-input" placeholder="Autodetectando..." title="Puedes corregirlo si se detecta mal">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>CANCIÓN</label>
+                    <input type="text" id="song-input" placeholder="Autodetectando..." title="Puedes corregirlo si se detecta mal">
+                </div>
             </div>
 
-            <button id="start-btn" class="btn-start">🎤 Iniciar Sesión</button>
+            <button id="start-btn" class="btn-start">🎤 Empezar a Cantar</button>
             <div id="setup-msg" class="status-msg"></div>
         </div>
     </div>
 
     <!-- PANTALLA DE KARAOKE -->
     <div id="karaoke-screen" class="screen">
-        
-        <!-- Video Fondo -->
-        <div class="video-bg">
-            <div id="youtube-player"></div>
-        </div>
-        <!-- Filtro Oscuro -->
+        <div class="video-bg"><div id="youtube-player"></div></div>
         <div class="overlay"></div>
 
-        <!-- Interfaz Superior -->
         <div class="karaoke-ui">
             <div class="top-bar">
-                <!-- Puntuación -->
                 <div class="score-board">
-                    <div class="score-title">PUNTOS</div>
+                    <div class="score-title">PUNTUACIÓN</div>
                     <div class="score-number" id="score-display">0</div>
                 </div>
 
-                <!-- Monitor de Voz (Ventana minimizable) -->
                 <div class="voice-monitor" id="voice-window">
                     <div class="voice-header">
-                        <span>🎙️ Monitor de Voz</span>
+                        <span>🎙️ Monitor en Vivo</span>
                         <button class="toggle-btn" id="toggle-voice-btn">➖</button>
                     </div>
-                    <div class="voice-content" id="voice-feedback">
-                        Esperando que cantes...
-                    </div>
+                    <div class="voice-content" id="voice-feedback">Esperando voz...</div>
                 </div>
             </div>
 
-            <!-- Letras en el Centro -->
             <div class="lyrics-center">
-                <div class="lyrics-title" id="lyrics-title">Modo Libre</div>
-                <div class="lyrics-box" id="lyrics-box">
-                    Las letras aparecerán aquí...
-                </div>
+                <div class="lyrics-title" id="lyrics-title">Preparando...</div>
+                <div class="lyrics-box" id="lyrics-box">Cargando letra...</div>
             </div>
 
-            <!-- Botón Salir -->
             <div class="bottom-bar">
-                <button id="stop-btn" class="btn-stop">Terminar Presentación</button>
+                <button id="stop-btn" class="btn-stop">Finalizar Sesión</button>
             </div>
         </div>
-
     </div>
 
-    <!-- Script de la API de YouTube -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
-    <!-- Lógica Principal -->
     <script>
         // --- VARIABLES GLOBALES ---
-        let player;
-        let recognition;
-        let score = 0;
-        let isPlaying = false;
+        let player, recognition, score = 0, isPlaying = false;
         let lyricsWordsSet = new Set(); 
+        let autoFetchTimeout;
 
-        // --- ELEMENTOS DEL DOM ---
-        const homeScreen = document.getElementById('home-screen');
-        const karaokeScreen = document.getElementById('karaoke-screen');
-        const urlInput = document.getElementById('url-input');
-        const searchInput = document.getElementById('search-input');
-        const startBtn = document.getElementById('start-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        const scoreDisplay = document.getElementById('score-display');
-        const voiceFeedback = document.getElementById('voice-feedback');
-        const voiceWindow = document.getElementById('voice-window');
-        const toggleVoiceBtn = document.getElementById('toggle-voice-btn');
-        const lyricsBox = document.getElementById('lyrics-box');
-        const lyricsTitle = document.getElementById('lyrics-title');
-        const setupMsg = document.getElementById('setup-msg');
+        // --- DOM ---
+        const ui = {
+            home: document.getElementById('home-screen'),
+            karaoke: document.getElementById('karaoke-screen'),
+            url: document.getElementById('url-input'),
+            artist: document.getElementById('artist-input'),
+            song: document.getElementById('song-input'),
+            startBtn: document.getElementById('start-btn'),
+            stopBtn: document.getElementById('stop-btn'),
+            score: document.getElementById('score-display'),
+            feedback: document.getElementById('voice-feedback'),
+            voiceWin: document.getElementById('voice-window'),
+            toggleVoice: document.getElementById('toggle-voice-btn'),
+            lyricsBox: document.getElementById('lyrics-box'),
+            lyricsTitle: document.getElementById('lyrics-title'),
+            msg: document.getElementById('setup-msg')
+        };
+
+        // --- AUTODETECCIÓN DE ARTISTA Y CANCIÓN ---
+        ui.url.addEventListener('input', () => {
+            clearTimeout(autoFetchTimeout);
+            const url = ui.url.value.trim();
+            if (extractVideoID(url)) {
+                ui.msg.innerText = "🔍 Analizando video...";
+                // Esperar a que deje de escribir
+                autoFetchTimeout = setTimeout(() => fetchVideoDetails(url), 800);
+            }
+        });
+
+        async function fetchVideoDetails(url) {
+            try {
+                // Usamos noembed para obtener detalles públicos de YT sin API Key
+                const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                
+                if (data.title) {
+                    ui.msg.innerText = "✅ Título detectado";
+                    parseVideoTitle(data.title);
+                } else {
+                    ui.msg.innerText = "⚠️ Rellena artista y canción manualmente";
+                }
+            } catch (e) {
+                ui.msg.innerText = "⚠️ No se pudo autodetectar. Rellénalo manualmente.";
+            }
+        }
+
+        function parseVideoTitle(title) {
+            // Limpiar "Official Video", "Lyrics", brackets, etc.
+            let clean = title.replace(/\[.*?\]|\(.*?\)/g, '').trim();
+            clean = clean.replace(/(official|music|video|lyric|lyrics|audio|hd)/gi, '').trim();
+            clean = clean.replace(/ft\..*|feat\..*/gi, '').trim(); // Quitar "ft. artista"
+
+            if (clean.includes('-')) {
+                const parts = clean.split('-');
+                ui.artist.value = parts[0].trim();
+                ui.song.value = parts[1].trim();
+            } else if (clean.includes(' by ')) {
+                const parts = clean.split(' by ');
+                ui.song.value = parts[0].trim();
+                ui.artist.value = parts[1].trim();
+            } else {
+                ui.song.value = clean;
+                ui.artist.value = "";
+            }
+        }
 
         // --- UTILIDADES ---
         function extractVideoID(url) {
@@ -400,222 +415,143 @@
         }
 
         function normalizeText(text) {
-            return text.toLowerCase()
-                       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"?¿¡!]/g,"")
-                       .trim();
+            return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                       .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"?¿¡!]/g,"").trim();
         }
 
-        // --- LÓGICA DE INTERFAZ (UI) ---
-        toggleVoiceBtn.addEventListener('click', () => {
-            voiceWindow.classList.toggle('minimized');
-            toggleVoiceBtn.innerText = voiceWindow.classList.contains('minimized') ? '➕' : '➖';
+        // --- UI ---
+        ui.toggleVoice.addEventListener('click', () => {
+            ui.voiceWin.classList.toggle('minimized');
+            ui.toggleVoice.innerText = ui.voiceWin.classList.contains('minimized') ? '➕' : '➖';
         });
 
         // --- YOUTUBE API ---
-        function onYouTubeIframeAPIReady() {
-            console.log("YT API lista");
-        }
+        function onYouTubeIframeAPIReady() { console.log("YT Ready"); }
 
         function initYouTube(videoId) {
-            if (player) {
-                player.loadVideoById(videoId);
-            } else {
+            if (player) { player.loadVideoById(videoId); } 
+            else {
                 player = new YT.Player('youtube-player', {
                     videoId: videoId,
-                    playerVars: { 
-                        'autoplay': 1, 
-                        'controls': 0, // Ocultar controles de YT para mayor inmersión
-                        'disablekb': 1,
-                        'modestbranding': 1,
-                        'rel': 0
-                    },
-                    events: { 'onStateChange': onPlayerStateChange }
+                    playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'modestbranding': 1 },
+                    events: { 'onStateChange': (e) => {
+                        if (e.data === YT.PlayerState.PLAYING && !isPlaying) startRecognition();
+                        else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.ENDED) stopRecognition();
+                    }}
                 });
-            }
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data === YT.PlayerState.PLAYING) {
-                if (!isPlaying) startRecognition();
-            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                stopRecognition();
             }
         }
 
         // --- RECONOCIMIENTO DE VOZ ---
         function setupSpeechRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (!SpeechRecognition) {
-                alert("Tu navegador no soporta el reconocimiento de voz. Por favor usa Chrome o Edge.");
-                return false;
-            }
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { alert("Usa Chrome o Edge para el reconocimiento de voz."); return false; }
 
-            recognition = new SpeechRecognition();
+            recognition = new SR();
             recognition.continuous = true;
             recognition.interimResults = true;
             recognition.lang = 'es-ES';
 
-            recognition.onstart = function() {
+            recognition.onstart = () => {
                 isPlaying = true;
-                voiceFeedback.innerHTML = "Escuchando... 🎵";
-                voiceFeedback.style.color = "var(--neon-pink)";
+                ui.feedback.innerHTML = "Escuchando... 🎵";
+                ui.feedback.style.color = "var(--neon-pink)";
             };
 
-            recognition.onresult = function(event) {
-                let interimTranscript = '';
-                let finalTranscript = '';
-
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                        evaluateSpeech(event.results[i][0].transcript);
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
+            recognition.onresult = (e) => {
+                let interim = '', final = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    if (e.results[i].isFinal) {
+                        final += e.results[i][0].transcript;
+                        evaluateSpeech(e.results[i][0].transcript);
+                    } else { interim += e.results[i][0].transcript; }
                 }
-
-                if (interimTranscript !== '') {
-                    voiceFeedback.innerHTML = interimTranscript;
-                } else if (finalTranscript !== '') {
-                    voiceFeedback.innerHTML = finalTranscript;
-                    setTimeout(() => { if(isPlaying) voiceFeedback.innerHTML = "Escuchando... 🎵"; }, 2000);
+                if (interim) ui.feedback.innerHTML = interim;
+                else if (final) {
+                    ui.feedback.innerHTML = final;
+                    setTimeout(() => { if(isPlaying) ui.feedback.innerHTML = "Escuchando... 🎵"; }, 2000);
                 }
             };
-
-            recognition.onerror = function(event) {
-                if (event.error === 'not-allowed') alert("Debes permitir el uso del micrófono.");
-            };
-
-            recognition.onend = function() {
-                if (isPlaying && player && player.getPlayerState() === YT.PlayerState.PLAYING) {
-                    recognition.start();
-                }
-            };
-
+            recognition.onerror = (e) => { if (e.error === 'not-allowed') alert("Permite el micrófono."); };
+            recognition.onend = () => { if (isPlaying && player?.getPlayerState() === YT.PlayerState.PLAYING) recognition.start(); };
             return true;
         }
 
-        function startRecognition() {
-            if (recognition && !isPlaying) {
-                try { recognition.start(); } catch(e){}
-            }
-        }
-
+        function startRecognition() { if (recognition && !isPlaying) try { recognition.start(); } catch(e){} }
         function stopRecognition() {
             isPlaying = false;
-            if (recognition) {
-                recognition.stop();
-                voiceFeedback.innerHTML = "Pausado ⏸️";
-                voiceFeedback.style.color = "#ccc";
-            }
+            if (recognition) { recognition.stop(); ui.feedback.innerHTML = "Pausado ⏸️"; ui.feedback.style.color = "#ccc"; }
         }
 
-        // --- PUNTUACIÓN Y LETRAS ---
-        async function fetchLyrics(query) {
+        // --- LETRAS Y PUNTUACIÓN ---
+        async function fetchLyrics(artist, song) {
             lyricsWordsSet.clear();
-            
-            if (!query || !query.includes('-')) {
-                lyricsTitle.innerText = query ? `Buscando: ${query}` : "Modo Libre";
-                lyricsBox.innerHTML = "Para buscar letras oficiales, asegúrate de escribir: Artista - Canción.<br><br>¡El sistema seguirá puntuando tu fluidez vocal de todos modos!";
+            if (!artist || !song) {
+                ui.lyricsTitle.innerText = "Modo Libre";
+                ui.lyricsBox.innerHTML = "Sin letra detectada. ¡Sigue cantando, el sistema puntuará tu fluidez vocal!";
                 return;
             }
 
-            // Separar Artista y Canción
-            const parts = query.split('-');
-            const artist = parts[0].trim();
-            const song = parts.slice(1).join('-').trim(); // Por si la canción tiene guiones
-
-            lyricsTitle.innerText = `${song} - ${artist}`;
-            lyricsBox.innerHTML = "Buscando letra en la base de datos... ⏳";
+            ui.lyricsTitle.innerText = `${song} - ${artist}`;
+            ui.lyricsBox.innerHTML = "Buscando letra oficial... ⏳";
 
             try {
-                // Usamos la API pública y gratuita lyrics.ovh
                 const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(song)}`);
                 const data = await res.json();
-
                 if (data.lyrics) {
                     const cleanLyrics = data.lyrics.replace(/\n\n\n/g, '\n\n');
-                    lyricsBox.innerText = cleanLyrics;
+                    ui.lyricsBox.innerText = cleanLyrics;
                     
-                    const normalizedLyrics = normalizeText(cleanLyrics);
-                    const wordsArray = normalizedLyrics.split(/\s+/);
-                    
-                    wordsArray.forEach(word => {
-                        if (word.length > 3) lyricsWordsSet.add(word);
-                    });
-                } else {
-                    throw new Error("No encontrada");
-                }
+                    const words = normalizeText(cleanLyrics).split(/\s+/);
+                    words.forEach(w => { if (w.length > 3) lyricsWordsSet.add(w); });
+                } else throw new Error("Vacio");
             } catch (err) {
-                lyricsBox.innerHTML = "No se encontró la letra exacta. ❌<br><br>¡Canta con el alma! El sistema puntuará tu fluidez.";
+                ui.lyricsBox.innerHTML = "No se encontró la letra exacta en la base de datos pública. ❌<br><br>¡Canta con el alma! El micrófono seguirá evaluándote.";
             }
         }
 
-        function evaluateSpeech(spokenText) {
-            const spokenWords = normalizeText(spokenText).split(/\s+/);
-            let matchCount = 0;
-
-            spokenWords.forEach(word => {
-                if (word.length > 3 && lyricsWordsSet.has(word)) {
-                    matchCount++;
-                    score += 50;
-                } else if (lyricsWordsSet.size === 0 && word.length > 2) {
-                    score += 10; // Puntos genéricos si no hay letra
-                }
+        function evaluateSpeech(text) {
+            const words = normalizeText(text).split(/\s+/);
+            let match = false;
+            words.forEach(w => {
+                if (w.length > 3 && lyricsWordsSet.has(w)) { score += 50; match = true; } 
+                else if (lyricsWordsSet.size === 0 && w.length > 2) { score += 10; match = true; }
             });
-
-            if (matchCount > 0 || lyricsWordsSet.size === 0) {
-                scoreDisplay.innerText = score;
-                scoreDisplay.style.transform = 'scale(1.3)';
-                setTimeout(() => scoreDisplay.style.transform = 'scale(1)', 150);
+            if (match) {
+                ui.score.innerText = score;
+                ui.score.style.transform = 'scale(1.4)';
+                setTimeout(() => ui.score.style.transform = 'scale(1)', 150);
             }
         }
 
-        // --- INICIAR / DETENER ---
-        startBtn.addEventListener('click', async () => {
-            const url = urlInput.value.trim();
-            const searchQuery = searchInput.value.trim();
-            const videoId = extractVideoID(url);
+        // --- FLUJO PRINCIPAL ---
+        ui.startBtn.addEventListener('click', async () => {
+            const vId = extractVideoID(ui.url.value);
+            if (!vId) return (ui.msg.innerText = "❌ URL de YouTube inválida.");
 
-            if (!videoId) {
-                setupMsg.innerText = "❌ URL de YouTube no válida.";
-                return;
-            }
-
-            setupMsg.innerText = "Autorizando micrófono... 🎙️";
-            
+            ui.msg.innerText = "Autorizando micrófono... 🎙️";
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                stream.getTracks().forEach(track => track.stop());
+                stream.getTracks().forEach(t => t.stop());
                 
                 if (!setupSpeechRecognition()) return;
 
-                homeScreen.classList.remove('active');
-                karaokeScreen.classList.add('active');
+                ui.home.classList.remove('active');
+                ui.karaoke.classList.add('active');
                 
-                score = 0;
-                scoreDisplay.innerText = score;
-                
-                initYouTube(videoId);
-                fetchLyrics(searchQuery);
-
-            } catch (err) {
-                setupMsg.innerText = "❌ Necesitas dar permisos de micrófono.";
-            }
+                score = 0; ui.score.innerText = score;
+                initYouTube(vId);
+                fetchLyrics(ui.artist.value.trim(), ui.song.value.trim());
+            } catch (err) { ui.msg.innerText = "❌ Permite el micrófono para jugar."; }
         });
 
-        stopBtn.addEventListener('click', () => {
+        ui.stopBtn.addEventListener('click', () => {
             stopRecognition();
-            if (player && typeof player.stopVideo === 'function') {
-                player.stopVideo();
-            }
-            alert(`🎤 ¡Presentación terminada!\nPuntuación final: ${score} puntos`);
-            
-            karaokeScreen.classList.remove('active');
-            homeScreen.classList.add('active');
-            setupMsg.innerText = "";
+            if (player?.stopVideo) player.stopVideo();
+            alert(`🎤 ¡Sesión terminada!\nPuntuación total: ${score}`);
+            ui.karaoke.classList.remove('active');
+            ui.home.classList.add('active');
+            ui.msg.innerText = "";
         });
     </script>
 </body>
