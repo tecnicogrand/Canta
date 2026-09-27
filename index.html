@@ -222,7 +222,7 @@
 
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
-        <div class="version-tag">v1.3 - Studio Edition</div>
+        <div class="version-tag">v1.4 - Studio Edition</div>
         <h1 class="title">Neon Voice Pro</h1>
         <div class="input-box">
             <div class="input-group">
@@ -581,7 +581,7 @@
             recognition.continuous = true; 
             recognition.interimResults = true; 
             recognition.lang = 'es-ES';
-            // MEJORA: Obtenemos hasta 3 alternativas de lo que el microfono cree escuchar
+            // Obtenemos hasta 3 alternativas de lo que el microfono cree escuchar para mayor precisión
             recognition.maxAlternatives = 3;
 
             recognition.onresult = (e) => {
@@ -591,9 +591,11 @@
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
                     if(e.results[i].isFinal) {
                         final += e.results[i][0].transcript + " ";
-                        // Recopilar alternativas
-                        for(let j = 0; j < e.results[i].length; j++){
-                            alternatives.push(e.results[i][j].transcript);
+                        // Recopilar alternativas si están disponibles
+                        if (e.results[i].length) {
+                            for(let j = 0; j < e.results[i].length; j++){
+                                alternatives.push(e.results[i][j].transcript);
+                            }
                         }
                     } else {
                         interim += e.results[i][0].transcript + " ";
@@ -603,33 +605,48 @@
                 ui.voiceTranscript.innerText = final || interim;
                 
                 // Unimos todas las alternativas en un gran texto para buscar coincidencias (aumenta aciertos)
-                let textToMatch = alternatives.join(" ") + " " + (final || interim);
+                let textToMatch = alternatives.length > 0 ? alternatives.join(" ") + " " + final : final || interim;
                 checkVoiceMatch(textToMatch.trim());
             };
             
-            recognition.onend = () => { if (isPlaying) recognition.start(); };
+            // Manejador de errores para evitar que se congele silenciosamente
+            recognition.onerror = (e) => {
+                console.warn("Error en el micrófono:", e.error);
+            };
+
+            // Auto-recuperación robusta con un pequeño delay para evitar bloqueos del navegador
+            recognition.onend = () => { 
+                if (isPlaying) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch(err){}
+                    }, 200);
+                }
+            };
             return true;
         }
 
         function checkVoiceMatch(spokenText) {
             if (parsedLyrics.length === 0) {
-                if (spokenText.length > 3) { score += 5; ui.score.innerText = score; }
+                if (spokenText.length > 1) { score += 5; ui.score.innerText = score; }
                 return;
             }
 
             if (activeLineIndex === -1) return;
             
-            const spokenWords = spokenText.split(/\s+/).map(w => normalize(w)).filter(w => w.length > 1);
+            // CORRECCIÓN: Filtro > 0 para que detecte palabras de 1 o 2 letras ("Ay", "Y", "Oh")
+            const spokenWords = spokenText.split(/\s+/).map(w => normalize(w)).filter(w => w.length > 0);
             
             [activeLineIndex - 2, activeLineIndex - 1, activeLineIndex, activeLineIndex + 1].forEach(lineIdx => {
                 if (lineIdx < 0 || !parsedLyrics[lineIdx]) return;
                 
                 const line = parsedLyrics[lineIdx];
                 line.words.forEach((lineWord, wIdx) => {
-                    if (!lineWord.matched && lineWord.clean.length > 1) {
+                    // CORRECCIÓN: Permite evaluar palabras cortas
+                    if (!lineWord.matched && lineWord.clean.length > 0) {
                         const isMatch = spokenWords.some(sw => {
                             if (sw === lineWord.clean) return true;
-                            if (sw.length >= 3 && lineWord.clean.length >= 3) {
+                            // Match parcial solo si ambas palabras tienen al menos 2 letras para no cruzar "y" con "yo"
+                            if (sw.length >= 2 && lineWord.clean.length >= 2) {
                                 return lineWord.clean.includes(sw) || sw.includes(lineWord.clean);
                             }
                             return false;
@@ -651,7 +668,8 @@
             if(!parsedLyrics[lineIdx]) return;
             
             const line = parsedLyrics[lineIdx];
-            const evaluableWords = line.words.filter(w => w.clean.length > 1);
+            // CORRECCIÓN: Contabiliza también las palabras cortas para el porcentaje total
+            const evaluableWords = line.words.filter(w => w.clean.length > 0);
             if (evaluableWords.length === 0) return;
 
             totalWordsEvaluated += evaluableWords.length;
@@ -709,11 +727,10 @@
                             if (e.data === YT.PlayerState.PLAYING) {
                                 player.setVolume(100);
                                 ui.pauseBtn.innerText = "⏸️ Pausar";
-                                if (!isPlaying && !isPausedManually) {
-                                    isPlaying = true;
-                                    try { recognition.start(); } catch(err){}
-                                    startSyncLoop();
-                                }
+                                
+                                isPlaying = true;
+                                try { recognition.start(); } catch(err){}
+                                startSyncLoop();
                             }
                             else if (e.data === YT.PlayerState.PAUSED) {
                                 isPlaying = false;
