@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Voice Pro - Sincronizado</title>
+    <title>Neon Voice Pro - Auto Sync</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
@@ -32,7 +32,7 @@
             font-size: 5rem; font-weight: 900; text-transform: uppercase;
             background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4)); margin-bottom: 30px;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4)); margin-bottom: 30px; text-align: center;
         }
 
         .input-box {
@@ -57,7 +57,7 @@
             box-shadow: 0 10px 30px rgba(255, 0, 127, 0.4); transition: transform 0.2s;
         }
         .btn-start:hover { transform: scale(1.02); }
-        .status-msg { margin-top: 20px; text-align: center; color: var(--neon-blue); font-weight: 700; min-height: 20px; }
+        .status-msg { margin-top: 20px; text-align: center; color: var(--neon-blue); font-weight: 700; min-height: 20px; font-size: 0.9rem;}
 
         /* --- KARAOKE UI --- */
         .video-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; background: #000; }
@@ -86,12 +86,11 @@
         .feedback-badge {
             font-size: 2.5rem; font-weight: 900; opacity: 0; transform: scale(0.5);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-transform: uppercase; text-shadow: 0 0 20px currentColor;
+            text-transform: uppercase; text-shadow: 0 0 20px currentColor; position: absolute; left: 50%; margin-left: -100px;
         }
         .feedback-badge.show { opacity: 1; transform: scale(1); }
         .feedback-badge.perfect { color: var(--gold); }
         .feedback-badge.good { color: var(--neon-blue); }
-        .feedback-badge.bad { color: #ff3333; }
 
         /* Letras Sincronizadas */
         .lyrics-viewport {
@@ -111,8 +110,7 @@
         }
 
         .lyric-line.active {
-            font-size: 3rem; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.5);
-            transform: scale(1.1);
+            font-size: 3rem; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.5); transform: scale(1.1);
         }
 
         /* Palabras individuales para retroalimentación */
@@ -140,7 +138,7 @@
             <div class="input-group">
                 <input type="text" id="url-input" placeholder="🔗 Pega el link de YouTube aquí..." autocomplete="off">
             </div>
-            <button id="start-btn" class="btn-start">🎤 Iniciar Karaoke</button>
+            <button id="start-btn" class="btn-start">🎤 Iniciar Karaoke Automático</button>
             <div id="setup-msg" class="status-msg"></div>
         </div>
     </div>
@@ -157,7 +155,7 @@
                     <div class="score-number" id="score-display">0</div>
                 </div>
                 <div id="feedback-badge" class="feedback-badge">¡PERFECTO!</div>
-                <div style="width: 150px;"></div> <!-- Spacer -->
+                <div style="width: 150px;"></div>
             </div>
 
             <div class="lyrics-viewport">
@@ -179,30 +177,25 @@
         let player, recognition;
         let score = 0;
         let isPlaying = false;
-        let parsedLyrics = []; // [{ time: 12.5, words: [{text: "Hola", matched: false}] }]
+        let parsedLyrics = []; 
         let activeLineIndex = -1;
         let animationFrameId;
 
         // --- DOM ---
         const ui = {
-            home: document.getElementById('home-screen'),
-            karaoke: document.getElementById('karaoke-screen'),
-            url: document.getElementById('url-input'),
-            startBtn: document.getElementById('start-btn'),
-            stopBtn: document.getElementById('stop-btn'),
-            msg: document.getElementById('setup-msg'),
-            scroller: document.getElementById('lyrics-scroller'),
-            score: document.getElementById('score-display'),
+            home: document.getElementById('home-screen'), karaoke: document.getElementById('karaoke-screen'),
+            url: document.getElementById('url-input'), startBtn: document.getElementById('start-btn'),
+            stopBtn: document.getElementById('stop-btn'), msg: document.getElementById('setup-msg'),
+            scroller: document.getElementById('lyrics-scroller'), score: document.getElementById('score-display'),
             badge: document.getElementById('feedback-badge')
         };
 
         // --- 1. EXTRACCIÓN Y BÚSQUEDA ---
         ui.url.addEventListener('input', () => {
             const url = ui.url.value.trim();
-            const vId = extractVideoID(url);
-            if(vId) {
+            if(extractVideoID(url)) {
                 ui.msg.style.color = "var(--neon-blue)";
-                ui.msg.innerText = "Buscando información del video...";
+                ui.msg.innerText = "🔍 Analizando el título original del video...";
                 fetchVideoTitle(url);
             }
         });
@@ -214,53 +207,110 @@
 
         async function fetchVideoTitle(url) {
             try {
+                // Obtener el título público del video
                 const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
                 const data = await res.json();
                 if (data.title) {
-                    ui.msg.innerText = "¡Canción detectada! Lista para buscar letra.";
-                    ui.url.dataset.title = data.title; // Guardamos el título para buscarlo después
+                    ui.msg.innerText = "✅ Título procesado. Listo para buscar.";
+                    ui.url.dataset.title = data.title;
                 }
             } catch (e) {
-                ui.msg.innerText = "Listo para iniciar (Búsqueda inteligente activada).";
+                ui.msg.innerText = "Listo para iniciar (Modo de búsqueda de respaldo).";
             }
         }
 
-        function cleanTitle(title) {
-            let clean = title.replace(/\[.*?\]|\(.*?\)/g, '').trim();
-            clean = clean.replace(/(official|music|video|lyric|lyrics|audio|hd)/gi, '').trim();
-            return clean;
-        }
-
-        async function fetchLyrics(query) {
-            ui.scroller.innerHTML = "<div class='lyric-line active'>Buscando letra sincronizada... ⏳</div>";
+        // --- MOTOR DE BÚSQUEDA MULTI-FASE DE LETRAS ---
+        async function fetchLyricsWithRetry(originalTitle) {
+            ui.scroller.innerHTML = "<div class='lyric-line active'>Iniciando algoritmo de búsqueda de letras... ⏳</div>";
             parsedLyrics = [];
             
-            try {
-                const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(cleanTitle(query))}`);
-                const data = await res.json();
-                
-                if (data && data.length > 0) {
-                    // Buscar el primer resultado que tenga letras sincronizadas (LRC)
-                    const match = data.find(song => song.syncedLyrics);
+            // 1. Limpieza de basura del título (ej. "Video Oficial", "HD")
+            let cleanTitle = originalTitle.replace(/\[.*?\]|\(.*?\)|【.*?】|「.*?」/g, ' ').trim();
+            cleanTitle = cleanTitle.replace(/(official|music|video|lyric|lyrics|audio|hd|4k|hq|remix)/gi, ' ').trim();
+
+            let artist = "";
+            let track = "";
+
+            // 2. Separar Artista y Canción
+            if (cleanTitle.includes('-')) {
+                const parts = cleanTitle.split('-');
+                artist = parts[0].trim();
+                track = parts.slice(1).join('-').trim();
+            } else if (cleanTitle.includes('|')) {
+                const parts = cleanTitle.split('|');
+                artist = parts[0].trim();
+                track = parts.slice(1).join('|').trim();
+            } else {
+                track = cleanTitle;
+            }
+
+            // 3. Quedarse solo con el artista principal si es una colaboración (ej "Bad Bunny x Jhay Cortez" -> "Bad Bunny")
+            if (artist) {
+                artist = artist.split(/ x | & | y |, | ft\. | feat\. /i)[0].trim();
+            }
+            track = track.replace(/["']/g, "").trim();
+
+            const normalizeStr = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+            // 4. Crear Lista de Búsquedas (De más exacta a más amplia)
+            const searchUrls = [];
+            
+            if (artist && track) {
+                // Intento 1: "Canción Artista" (Formato más exitoso en LRCLIB)
+                searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(track + " " + artist)}`);
+                // Intento 2: "Cancion Artista" (Sin tildes ni acentos)
+                searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(normalizeStr(track) + " " + normalizeStr(artist))}`);
+                // Intento 3: Campos específicos
+                searchUrls.push(`https://lrclib.net/api/search?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`);
+            }
+            
+            // Intento 4: Título entero limpio (Por si el artista y track se separaron mal)
+            searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(cleanTitle)}`);
+            
+            // Intento 5: Solo la canción
+            if (track) {
+                searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(track)}`);
+            }
+
+            let match = null;
+
+            // 5. Ejecutar búsquedas en cascada hasta encontrar letras sincronizadas (LRC)
+            for (let i = 0; i < searchUrls.length; i++) {
+                try {
+                    const res = await fetch(searchUrls[i]);
+                    const data = await res.json();
                     
-                    if (match && match.syncedLyrics) {
-                        parseLRC(match.syncedLyrics);
-                        renderLyrics();
-                        return true;
-                    } else if (data[0].plainLyrics) {
-                        // Fallback a texto normal si no hay sincronizado
-                        ui.scroller.innerHTML = "<div class='lyric-line active' style='font-size: 1.5rem'>" + data[0].plainLyrics + "</div>";
-                        return false;
+                    if (data && data.length > 0) {
+                        // Buscar preferencia: Letras sincronizadas (.lrc)
+                        const lrcMatch = data.find(song => song.syncedLyrics);
+                        if (lrcMatch) {
+                            match = lrcMatch;
+                            break; // ¡Encontrado! Detener búsquedas
+                        } else if (!match && data[0].plainLyrics) {
+                            // Guardar texto normal como plan B
+                            match = data[0]; 
+                        }
                     }
+                } catch (e) {
+                    // Ignorar error de red y probar el siguiente enlace
                 }
-                throw new Error("No hay letra");
-            } catch (e) {
-                ui.scroller.innerHTML = "<div class='lyric-line active'>Letra no encontrada. ¡Canta a capela! 🎤</div>";
+            }
+
+            // 6. Renderizar Resultado
+            if (match && match.syncedLyrics) {
+                parseLRC(match.syncedLyrics);
+                renderLyrics();
+                return true;
+            } else if (match && match.plainLyrics) {
+                ui.scroller.innerHTML = `<div class='lyric-line active' style='font-size: 1.5rem; line-height: 2; overflow-y: auto; max-height: 60vh;'>${match.plainLyrics}</div>`;
+                return false;
+            } else {
+                ui.scroller.innerHTML = "<div class='lyric-line active'>Letra no encontrada en la base mundial. ❌<br><br>¡Canta con el alma! El sistema sumará puntos por tu fluidez vocal. 🎤</div>";
                 return false;
             }
         }
 
-        // --- 2. PARSEO LRC (Letras Sincronizadas) ---
+        // --- 2. PARSEO LRC ---
         function parseLRC(lrcString) {
             const lines = lrcString.split('\n');
             const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
@@ -275,7 +325,6 @@
                     const text = match[4].trim();
                     
                     if (text) {
-                        // Separar la línea en palabras evaluables
                         const wordsArr = text.split(/\s+/).map(w => ({
                             original: w,
                             clean: normalize(w),
@@ -291,7 +340,7 @@
             return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
         }
 
-        // --- 3. RENDERIZADO Y SINCRONIZACIÓN ---
+        // --- 3. RENDERIZADO Y TELEPROMPTER ---
         function renderLyrics() {
             ui.scroller.innerHTML = "";
             parsedLyrics.forEach((line, i) => {
@@ -299,7 +348,6 @@
                 div.className = 'lyric-line';
                 div.id = `line-${i}`;
                 
-                // Crear spans para cada palabra
                 line.words.forEach((w, wordIndex) => {
                     const span = document.createElement('span');
                     span.className = 'word';
@@ -307,7 +355,6 @@
                     span.innerText = w.original;
                     div.appendChild(span);
                 });
-                
                 ui.scroller.appendChild(div);
             });
         }
@@ -318,39 +365,33 @@
             const currentTime = player.getCurrentTime();
             let newActiveIndex = -1;
 
-            // Encontrar la línea actual (la que tiene el timestamp menor o igual al tiempo actual)
             for (let i = parsedLyrics.length - 1; i >= 0; i--) {
-                if (currentTime >= parsedLyrics[i].time - 0.3) { // 0.3s de anticipación
+                if (currentTime >= parsedLyrics[i].time - 0.3) {
                     newActiveIndex = i;
                     break;
                 }
             }
 
             if (newActiveIndex !== activeLineIndex && newActiveIndex !== -1) {
-                // Evaluar la línea que acaba de terminar (si existía)
                 if(activeLineIndex !== -1) evaluateLineCompletion(activeLineIndex);
 
                 activeLineIndex = newActiveIndex;
                 
-                // Actualizar UI
                 document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
                 const activeEl = document.getElementById(`line-${activeLineIndex}`);
                 if (activeEl) {
                     activeEl.classList.add('active');
-                    
-                    // Efecto teleprompter (centrar la línea activa)
                     const offset = activeEl.offsetTop - (ui.scroller.parentElement.offsetHeight / 2) + (activeEl.offsetHeight / 2);
                     ui.scroller.style.transform = `translateY(-${Math.max(0, offset)}px)`;
                 }
             }
-
             animationFrameId = requestAnimationFrame(syncLoop);
         }
 
-        // --- 4. EVALUACIÓN DE VOZ EN TIEMPO REAL ---
+        // --- 4. RECONOCIMIENTO DE VOZ Y EVALUACIÓN ---
         function setupSpeech() {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) { alert("Navegador no compatible con voz. Usa Chrome."); return false; }
+            if (!SR) { alert("Navegador no compatible. Usa Google Chrome o Edge."); return false; }
 
             recognition = new SR();
             recognition.continuous = true;
@@ -362,8 +403,6 @@
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
                     transcript += e.results[i][0].transcript + " ";
                 }
-                
-                // Comparar lo escuchado con la línea actual (o la anterior por si hay lag)
                 checkVoiceMatch(transcript.trim());
             };
             
@@ -372,24 +411,30 @@
         }
 
         function checkVoiceMatch(spokenText) {
-            if (activeLineIndex === -1 || parsedLyrics.length === 0) return;
+            // Si la letra no es sincronizada, dar puntos básicos por cantar (fluidez)
+            if (parsedLyrics.length === 0) {
+                if (spokenText.length > 5) {
+                    score += 5;
+                    ui.score.innerText = score;
+                }
+                return;
+            }
+
+            if (activeLineIndex === -1) return;
 
             const spokenWords = spokenText.split(/\s+/).map(w => normalize(w));
             
-            // Revisamos la línea actual y la anterior (para perdonar retrasos)
+            // Revisar línea actual y anterior por temas de lag de red
             [activeLineIndex, activeLineIndex - 1].forEach(lineIdx => {
                 if (lineIdx < 0) return;
                 
                 const line = parsedLyrics[lineIdx];
-                
                 line.words.forEach((lineWord, wIdx) => {
-                    // Si la palabra hablada incluye la palabra de la letra, y no ha sido marcada
                     if (!lineWord.matched && lineWord.clean.length > 2 && spokenWords.some(sw => sw.includes(lineWord.clean))) {
                         lineWord.matched = true;
                         score += 20;
                         ui.score.innerText = score;
                         
-                        // Iluminar palabra
                         const wordEl = document.getElementById(`word-${lineIdx}-${wIdx}`);
                         if (wordEl) wordEl.classList.add('matched');
                     }
@@ -405,22 +450,19 @@
             const matchedWords = evaluableWords.filter(w => w.matched).length;
             const percentage = matchedWords / evaluableWords.length;
 
-            showBadge(percentage);
+            if (percentage >= 0.8) {
+                showBadge("¡PERFECTO! 🔥", 'perfect', 50);
+            } else if (percentage >= 0.4) {
+                showBadge("¡BIEN! 👍", 'good', 10);
+            }
         }
 
-        function showBadge(percentage) {
-            ui.badge.className = 'feedback-badge'; // reset
-            if (percentage >= 0.8) {
-                ui.badge.innerText = "¡PERFECTO! 🔥";
-                ui.badge.classList.add('perfect');
-                score += 50;
-            } else if (percentage >= 0.4) {
-                ui.badge.innerText = "¡BIEN! 👍";
-                ui.badge.classList.add('good');
-            } else {
-                return; // No mostramos nada si falló la mayoría
-            }
-
+        function showBadge(text, className, bonus) {
+            ui.badge.className = 'feedback-badge'; 
+            ui.badge.innerText = text;
+            ui.badge.classList.add(className);
+            
+            score += bonus;
             ui.score.innerText = score;
             ui.badge.classList.add('show');
             setTimeout(() => ui.badge.classList.remove('show'), 1500);
@@ -452,12 +494,12 @@
             }
         }
 
-        // --- 6. FLUJO PRINCIPAL ---
+        // --- 6. INICIO ---
         ui.startBtn.addEventListener('click', async () => {
             const vId = extractVideoID(ui.url.value);
             if (!vId) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ URL inválida."; return; }
 
-            const queryTitle = ui.url.dataset.title || ui.url.value; 
+            const queryTitle = ui.url.dataset.title || "Unknown"; 
 
             ui.msg.innerText = "Autorizando micrófono... 🎙️";
             try {
@@ -469,13 +511,15 @@
                 ui.home.classList.remove('active');
                 ui.karaoke.classList.add('active');
                 
-                // Reset estado
                 score = 0; ui.score.innerText = score;
                 activeLineIndex = -1;
                 ui.scroller.style.transform = `translateY(0)`;
                 
                 initYouTube(vId);
-                fetchLyrics(queryTitle);
+                
+                // Ejecutar el motor de búsqueda avanzado
+                fetchLyricsWithRetry(queryTitle);
+
             } catch (err) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ Permite el micrófono."; }
         });
 
