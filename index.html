@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Karaoke Web</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --primary-neon: #66fcf1;
+            --secondary-neon: #45a29e;
+            --text-color: #c5c6c7;
+            --danger: #ff0055;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .screen {
+            width: 100%;
+            max-width: 1200px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Tipografía Neon */
+        .glow-text {
+            font-size: 4rem;
+            color: var(--primary-neon);
+            text-shadow: 0 0 10px var(--primary-neon), 0 0 20px var(--primary-neon), 0 0 40px var(--secondary-neon);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Inputs y Botones */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+            margin-top: 30px;
+        }
+
+        input {
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #1f2833;
+            background: #1f2833;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary-neon);
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-neon);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--primary-neon);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px var(--primary-neon);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+            margin-top: 20px;
+            box-shadow: 0 0 15px var(--danger);
+        }
+
+        .hidden { display: none !important; }
+        .error { color: var(--danger); margin-top: 15px; }
+
+        /* Karaoke Layout */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .score-board {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-neon);
+            text-shadow: 0 0 10px var(--primary-neon);
+            transition: transform 0.1s;
+        }
+
+        .karaoke-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .video-container {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            aspect-ratio: 16/9;
+        }
+
+        #youtube-player { width: 100%; height: 100%; }
+
+        .lyrics-container {
+            background: #1f2833;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+        }
+
+        .lyrics-scroll {
+            overflow-y: auto;
+            flex-grow: 1;
+            margin-top: 15px;
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: white;
+            text-align: center;
+            white-space: pre-wrap;
+        }
+
+        /* Scrollbar personalizado */
+        .lyrics-scroll::-webkit-scrollbar { width: 8px; }
+        .lyrics-scroll::-webkit-scrollbar-thumb { background: var(--primary-neon); border-radius: 4px; }
+
+        .visualizer-container {
+            grid-column: span 2;
+            height: 100px;
+            background: #1f2833;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        canvas { width: 100%; height: 100%; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .karaoke-layout { grid-template-columns: 1fr; }
+            .visualizer-container { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Pantalla de Inicio -->
+        <div id="home-screen" class="screen active">
+            <h1 class="glow-text">Neon Karaoke</h1>
+            <p>Ingresa un enlace de YouTube y el nombre de la canción para empezar</p>
+            
+            <div class="input-group">
+                <input type="text" id="youtube-url" placeholder="Ej: https://www.youtube.com/watch?v=...">
+                <input type="text" id="artist-name" placeholder="Artista (Ej: Coldplay)">
+                <input type="text" id="song-name" placeholder="Canción (Ej: Yellow)">
+                <button id="start-btn" class="btn-primary">¡Cantar ahora!</button>
+            </div>
+            <p id="error-msg" class="error hidden">Por favor ingresa datos válidos y permite el uso del micrófono.</p>
+        </div>
+
+        <!-- Pantalla de Karaoke -->
+        <div id="karaoke-screen" class="screen hidden">
+            <div class="header">
+                <h2>Escenario</h2>
+                <div class="score-board">
+                    <span>Puntuación: </span>
+                    <span id="score">0</span>
+                </div>
+            </div>
+
+            <div class="karaoke-layout">
+                <!-- Reproductor de YouTube -->
+                <div class="video-container">
+                    <div id="youtube-player"></div>
+                </div>
+
+                <!-- Visualizador de Audio (Micrófono) -->
+                <div class="visualizer-container">
+                    <canvas id="audio-visualizer"></canvas>
+                </div>
+
+                <!-- Letras de la canción -->
+                <div class="lyrics-container">
+                    <h3 id="lyrics-title">Buscando letras...</h3>
+                    <div id="lyrics-content" class="lyrics-scroll">
+                        <div>Esperando...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="end-btn" class="btn-danger">Terminar Sesión</button>
+        </div>
+    </div>
+
+    <!-- Script de la API de YouTube -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <!-- Lógica de la aplicación -->
+    <script>
+        // Variables Globales
+        let player;
+        let audioContext;
+        let analyser;
+        let microphone;
+        let isKaraokeActive = false;
+        let score = 0;
+        let animationId;
+        let scoreInterval;
+
+        // Elementos del DOM
+        const homeScreen = document.getElementById('home-screen');
+        const karaokeScreen = document.getElementById('karaoke-screen');
+        const urlInput = document.getElementById('youtube-url');
+        const artistInput = document.getElementById('artist-name');
+        const songInput = document.getElementById('song-name');
+        const startBtn = document.getElementById('start-btn');
+        const endBtn = document.getElementById('end-btn');
+        const errorMsg = document.getElementById('error-msg');
+        const scoreDisplay = document.getElementById('score');
+        const lyricsContent = document.getElementById('lyrics-content');
+        const lyricsTitle = document.getElementById('lyrics-title');
+        const canvas = document.getElementById('audio-visualizer');
+        const ctx = canvas.getContext('2d');
+
+        // --- 1. Inicialización de YouTube ---
+        function onYouTubeIframeAPIReady() {
+            console.log("YouTube API Ready");
+        }
+
+        function extractVideoID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        // --- 2. Flujo Principal (Botón Empezar) ---
+        startBtn.addEventListener('click', async () => {
+            const videoUrl = urlInput.value.trim();
+            const artist = artistInput.value.trim();
+            const song = songInput.value.trim();
+            const videoId = extractVideoID(videoUrl);
+
+            if (!videoId) {
+                showError("Enlace de YouTube no válido.");
+                return;
+            }
+
+            try {
+                // Pedir permiso para el micrófono
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Configurar Web Audio API
+                setupAudio(stream);
+                
+                // Cambiar de pantalla
+                homeScreen.classList.remove('active');
+                homeScreen.classList.add('hidden');
+                karaokeScreen.classList.remove('hidden');
+                karaokeScreen.classList.add('active');
+                
+                // Iniciar Reproductor
+                setupYouTubePlayer(videoId);
+                
+                // Buscar Letras
+                fetchLyrics(artist, song);
+                
+                // Iniciar Puntuación y Visualizador
+                isKaraokeActive = true;
+                score = 0;
+                updateScore();
+                visualizeAudio();
+                calculateScore();
+
+            } catch (err) {
+                console.error("Error al acceder al micrófono:", err);
+                showError("Debes permitir el acceso al micrófono para cantar.");
+            }
+        });
+
+        // --- 3. Configuración de YouTube ---
+        function setupYouTubePlayer(videoId) {
+            if (player) {
+                player.loadVideoById(videoId);
+            } else {
+                player = new YT.Player('youtube-player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: videoId,
+                    playerVars: { 'autoplay': 1, 'controls': 1 },
+                    events: {
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                endKaraokeSession();
+            }
+        }
+
+        // --- 4. Web Audio API (Micrófono y Visualizador) ---
+        function setupAudio(stream) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            microphone = audioContext.createMediaStreamSource(stream);
+            
+            analyser.fftSize = 256;
+            microphone.connect(analyser);
+        }
+
+        function visualizeAudio() {
+            if (!isKaraokeActive) return;
+            
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            function draw() {
+                if (!isKaraokeActive) return;
+                animationId = requestAnimationFrame(draw);
+                
+                analyser.getByteFrequencyData(dataArray);
+                
+                ctx.fillStyle = '#1f2833';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = dataArray[i] / 2;
+                    ctx.fillStyle = `rgb(102, 252, ${barHeight + 100})`;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            }
+            draw();
+        }
+
+        // --- 5. Sistema de Puntuación ---
+        function calculateScore() {
+            if (!isKaraokeActive) return;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            scoreInterval = setInterval(() => {
+                if (!isKaraokeActive || !player || typeof player.getPlayerState !== 'function' || player.getPlayerState() !== YT.PlayerState.PLAYING) return;
+
+                analyser.getByteFrequencyData(dataArray);
+                
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const averageVolume = sum / bufferLength;
+
+                if (averageVolume > 20) {
+                    score += Math.floor(averageVolume / 10);
+                    updateScore();
+                    
+                    scoreDisplay.style.transform = 'scale(1.2)';
+                    setTimeout(() => scoreDisplay.style.transform = 'scale(1)', 100);
+                }
+            }, 500);
+        }
+
+        function updateScore() {
+            scoreDisplay.innerText = score;
+        }
+
+        // --- 6. Obtención de Letras (API) ---
+        async function fetchLyrics(artist, song) {
+            if (!artist || !song) {
+                lyricsTitle.innerText = "Letra no disponible";
+                lyricsContent.innerText = "Ingresa el artista y la canción en la pantalla de inicio para buscar la letra.";
+                return;
+            }
+
+            lyricsTitle.innerText = `${song} - ${artist}`;
+            lyricsContent.innerHTML = "<div>Buscando...</div>";
+
+            try {
+                const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(song)}`);
+                if (!response.ok) throw new Error("No encontrada");
+                
+                const data = await response.json();
+                if (data.lyrics) {
+                    lyricsContent.innerText = data.lyrics.replace(/\n\n\n/g, '\n\n');
+                } else {
+                    throw new Error("Vacío");
+                }
+            } catch (error) {
+                lyricsContent.innerText = "No se encontraron las letras para esta canción. ¡Pero sigue cantando con el alma!";
+            }
+        }
+
+        // --- 7. Utilidades ---
+        function showError(msg) {
+            errorMsg.innerText = msg;
+            errorMsg.classList.remove('hidden');
+            setTimeout(() => errorMsg.classList.add('hidden'), 5000);
+        }
+
+        function endKaraokeSession() {
+            isKaraokeActive = false;
+            cancelAnimationFrame(animationId);
+            clearInterval(scoreInterval);
+            
+            if (audioContext && audioContext.state !== 'closed') {
+                audioContext.close();
+            }
+            if (player && typeof player.stopVideo === 'function') {
+                player.stopVideo();
+            }
+
+            alert(`¡Sesión terminada! Tu puntuación final fue de: ${score} puntos.`);
+            
+            karaokeScreen.classList.remove('active');
+            karaokeScreen.classList.add('hidden');
+            homeScreen.classList.remove('hidden');
+            homeScreen.classList.add('active');
+        }
+
+        endBtn.addEventListener('click', endKaraokeSession);
+    </script>
+</body>
+</html>
