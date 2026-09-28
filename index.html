@@ -25,6 +25,7 @@
         }
         .screen.active { display: flex; animation: fadeIn 0.5s ease-out; }
 
+        /* --- PANTALLA INICIO --- */
         #home-screen { background: radial-gradient(circle at 50% 50%, #151520 0%, #050505 100%); position: relative; }
         
         .version-tag {
@@ -32,7 +33,9 @@
             color: var(--neon-blue); font-size: 0.9rem; font-weight: bold;
             border: 1px solid var(--neon-blue); padding: 5px 10px; border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+            text-align: right;
         }
+        .changelog { font-size: 0.7rem; color: #aaa; margin-top: 5px; font-weight: normal;}
 
         .title {
             font-size: 5rem; font-weight: 900; text-transform: uppercase;
@@ -72,18 +75,25 @@
         .btn-start:hover { transform: scale(1.02); }
         .status-msg { margin-top: 20px; text-align: center; color: var(--neon-blue); font-weight: 700; min-height: 20px; font-size: 0.9rem;}
 
-        .video-bg { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; 
-            pointer-events: none; background: #000; will-change: transform;
+        #custom-modal { background: rgba(0,0,0,0.85); z-index: 9999; backdrop-filter: blur(5px);}
+        .modal-content {
+            background: #111118; border: 2px solid var(--neon-pink); border-radius: 20px;
+            padding: 40px; max-width: 500px; width: 90%; text-align: center;
+            box-shadow: 0 0 40px rgba(255, 0, 127, 0.3);
         }
+        .modal-title { color: #fff; font-size: 1.8rem; margin-bottom: 15px;}
+        .modal-text { color: #aaa; margin-bottom: 25px; line-height: 1.5;}
+        .modal-btn-row { display: flex; flex-direction: column; gap: 10px; margin-top: 25px;}
+
+        /* --- KARAOKE UI --- */
+        .video-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; background: #000; will-change: transform;}
         .video-bg iframe {
             width: 100vw; height: 56.25vw; min-height: 100vh; min-width: 177.77vh;
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.5;
         }
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.95) 100%); z-index: 2;
-            pointer-events: none;
+            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.95) 100%); z-index: 2; pointer-events: none;
         }
 
         .karaoke-container { position: relative; z-index: 3; width: 100%; height: 100%; display: flex; flex-direction: column; }
@@ -107,8 +117,7 @@
         .voice-monitor-window {
             position: absolute; top: 50px; right: 0; width: 320px;
             background: rgba(10, 10, 15, 0.95); border: 1px solid var(--neon-blue); border-radius: 15px;
-            padding: 15px; display: none; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
+            padding: 15px; display: none; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px);
         }
         .voice-monitor-window.show { display: flex; animation: fadeIn 0.3s ease; }
         .voice-monitor-title { font-size: 0.8rem; color: var(--neon-blue); margin-bottom: 10px; border-bottom: 1px solid rgba(0,229,255,0.3); padding-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
@@ -124,8 +133,7 @@
         .feedback-badge.good { color: var(--neon-blue); }
 
         .lyrics-viewport {
-            flex-grow: 1; position: relative; overflow: hidden;
-            display: flex; flex-direction: column; align-items: center;
+            flex-grow: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center;
             mask-image: linear-gradient(transparent 5%, black 35%, black 65%, transparent 95%);
             -webkit-mask-image: linear-gradient(transparent 5%, black 35%, black 65%, transparent 95%);
         }
@@ -133,48 +141,32 @@
         .lyrics-scroller {
             position: absolute; top: 0; left: 0; width: 100%;
             transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            display: flex; flex-direction: column; align-items: center; gap: 30px;
-            padding-bottom: 50vh;
+            display: flex; flex-direction: column; align-items: center; gap: 30px; padding-bottom: 50vh;
         }
 
         .lyric-line {
             font-size: 2.5rem; font-weight: 800; color: #fff; text-align: center;
             transition: all 0.4s ease; max-width: 90%; white-space: pre-wrap; line-height: 1.5;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); opacity: 0; transform: scale(0.8);
-            position: absolute; visibility: hidden;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); opacity: 0; transform: scale(0.8); position: absolute; visibility: hidden;
         }
 
         .lyric-line.past { opacity: 0.3; transform: scale(0.9); visibility: visible; position: relative; }
         .lyric-line.active { opacity: 1; transform: scale(1.3); text-shadow: 0 0 20px rgba(255,255,255,0.4); visibility: visible; position: relative; }
         .lyric-line.upcoming { opacity: 0.3; transform: scale(0.9); visibility: visible; position: relative; }
 
-        .karaoke-word {
-            display: inline-block; position: relative; margin-right: 8px;
-            color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
+        .karaoke-word { display: inline-block; position: relative; margin-right: 8px; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
         .karaoke-word-fill {
             position: absolute; top: 0; left: 0; overflow: hidden; white-space: nowrap; width: 0%;
             color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); transition: width 0.1s linear;
         }
 
-        /* CRITICAL FIX: Ensure matched words pop to 100% width immediately to fix half-filled words */
-        .karaoke-word.voice-matched .karaoke-word-fill { 
-            color: var(--gold); 
-            text-shadow: 0 0 20px var(--gold); 
-            width: 100% !important; /* Forces complete fill */
-            transition: width 0.1s ease-out;
-        }
-        .karaoke-word.voice-matched { 
-            transform: translateY(-5px) scale(1.05); 
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
+        .karaoke-word.voice-matched .karaoke-word-fill { color: var(--gold); text-shadow: 0 0 20px var(--gold); width: 100% !important; transition: width 0.1s ease-out; }
+        .karaoke-word.voice-matched { transform: translateY(-5px) scale(1.05); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
         .controls { display: flex; justify-content: center; gap: 20px; padding: 20px; z-index: 10; height: 100px; align-items: center;}
         
         .btn-control {
-            background: rgba(0,0,0,0.6); padding: 15px 30px; border-radius: 10px;
-            font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1.1rem; border: 2px solid transparent; color: #fff;
-            backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.6); padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1.1rem; border: 2px solid transparent; color: #fff; backdrop-filter: blur(5px);
         }
         .btn-pause { border-color: var(--neon-blue); color: var(--neon-blue); }
         .btn-pause:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); }
@@ -183,10 +175,8 @@
 
         #results-screen { background: radial-gradient(circle at 50% 50%, #151520 0%, #050505 100%); z-index: 30;}
         .results-box {
-            background: rgba(20, 20, 30, 0.8); backdrop-filter: blur(20px);
-            border: 1px solid var(--neon-pink); border-radius: 20px;
-            padding: 50px; width: 100%; max-width: 600px; text-align: center;
-            box-shadow: 0 0 50px rgba(255, 0, 127, 0.3);
+            background: rgba(20, 20, 30, 0.8); backdrop-filter: blur(20px); border: 1px solid var(--neon-pink); border-radius: 20px;
+            padding: 50px; width: 100%; max-width: 600px; text-align: center; box-shadow: 0 0 50px rgba(255, 0, 127, 0.3);
         }
         .results-title { font-size: 3rem; color: #fff; margin-bottom: 20px; text-transform: uppercase; }
         .results-score-label { font-size: 1.2rem; color: #aaa; letter-spacing: 2px; margin-top: 20px;}
@@ -200,24 +190,18 @@
         .btn-home:hover { transform: scale(1.05); }
 
         .countdown-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.85); z-index: 9999;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
             opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
         }
         .countdown-overlay.show { opacity: 1; pointer-events: auto; }
         .countdown-number {
-            font-size: 12rem; font-weight: 900; color: var(--neon-blue);
-            text-shadow: 0 0 50px var(--neon-blue); margin: 0; line-height: 1;
+            font-size: 12rem; font-weight: 900; color: var(--neon-blue); text-shadow: 0 0 50px var(--neon-blue); margin: 0; line-height: 1;
             animation: pop 1s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .countdown-text { color: #fff; font-size: 2rem; margin-top: 20px; font-weight: bold; letter-spacing: 5px; text-transform: uppercase;}
         
-        @keyframes pop { 
-            0% { transform: scale(0.5); opacity: 0; } 
-            50% { transform: scale(1.2); opacity: 1; } 
-            100% { transform: scale(1); opacity: 0; } 
-        }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -229,9 +213,33 @@
         <div class="countdown-text">Prepárate</div>
     </div>
 
+    <!-- MODAL PERSONALIZADO (ALERTA DE LETRA NO ENCONTRADA) -->
+    <div id="custom-modal" class="screen">
+        <div class="modal-content">
+            <h2 class="modal-title">⚠️ Letra no encontrada</h2>
+            <p class="modal-text">No pudimos descargar la letra automáticamente usando el enlace del video. Por favor, especifica el nombre del artista y la canción.</p>
+            
+            <div class="input-group">
+                <input type="text" id="modal-artist" placeholder="🎤 Nombre del Artista" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <input type="text" id="modal-song" placeholder="🎵 Nombre de la Canción" autocomplete="off">
+            </div>
+
+            <div class="modal-btn-row">
+                <button id="modal-retry-btn" class="btn-start" style="padding: 15px; font-size: 1.1rem;">Reintentar Búsqueda</button>
+                <button id="modal-free-btn" class="btn-control btn-pause" style="width: 100%;">Cantar sin Letra (Modo Libre)</button>
+                <button id="modal-cancel-btn" class="btn-control btn-stop" style="width: 100%;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
-        <div class="version-tag">Studio v1.3 - Exact Match</div>
+        <div class="version-tag">
+            Studio v1.5
+            <div class="changelog">Smart Fallback & Sync Fix</div>
+        </div>
         <h1 class="title">Neon Voice Pro</h1>
         <p class="subtitle">Modo Consola Profesional Activo</p>
         <div class="input-box">
@@ -313,10 +321,14 @@
         // --- DOM ---
         const ui = {
             home: document.getElementById('home-screen'), karaoke: document.getElementById('karaoke-screen'),
-            results: document.getElementById('results-screen'), url: document.getElementById('url-input'), 
-            artistInput: document.getElementById('artist-input'), songInput: document.getElementById('song-input'),
+            results: document.getElementById('results-screen'), customModal: document.getElementById('custom-modal'),
+            url: document.getElementById('url-input'), artistInput: document.getElementById('artist-input'), 
+            songInput: document.getElementById('song-input'), modalArtist: document.getElementById('modal-artist'),
+            modalSong: document.getElementById('modal-song'),
             startBtn: document.getElementById('start-btn'), pauseBtn: document.getElementById('pause-btn'), 
             stopBtn: document.getElementById('stop-btn'), homeBtn: document.getElementById('home-btn'),
+            modalRetryBtn: document.getElementById('modal-retry-btn'), modalFreeBtn: document.getElementById('modal-free-btn'),
+            modalCancelBtn: document.getElementById('modal-cancel-btn'),
             msg: document.getElementById('setup-msg'), scroller: document.getElementById('lyrics-scroller'), 
             viewport: document.querySelector('.lyrics-viewport'), score: document.getElementById('score-display'), 
             badge: document.getElementById('feedback-badge'), btnToggleVoice: document.getElementById('btn-toggle-voice'),
@@ -330,7 +342,6 @@
             ui.countdownOverlay.classList.add('show');
             let count = 3;
             ui.countdownNumber.innerText = count;
-            
             ui.countdownNumber.style.animation = 'none';
             ui.countdownNumber.offsetHeight; 
             ui.countdownNumber.style.animation = 'pop 1s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275)';
@@ -405,8 +416,8 @@
             }
         }
 
+        // Retorna Promesa con true (éxito/letras encontradas) o false (letras no encontradas)
         async function fetchLyricsWithRetry(originalTitle, artistOverride, songOverride) {
-            ui.scroller.innerHTML = "<div class='lyric-line active' style='visibility: visible; position: relative;'>Buscando letras sincronizadas... ⏳</div>";
             parsedLyrics = [];
             const searchUrls = [];
             const normalizeStr = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -440,10 +451,7 @@
                 if (autoTrack) searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(autoTrack)}`);
             }
 
-            if(searchUrls.length === 0) {
-                 ui.scroller.innerHTML = "<div class='lyric-line active' style='visibility: visible; position: relative;'>Faltan datos para buscar. ❌<br><br>¡Canta con el alma! 🎤</div>";
-                 return false;
-            }
+            if(searchUrls.length === 0) return false;
 
             let match = null;
             for (let i = 0; i < searchUrls.length; i++) {
@@ -465,9 +473,8 @@
                 return true;
             } else if (match && match.plainLyrics) {
                 ui.scroller.innerHTML = `<div class='lyric-line active' style='font-size: 1.5rem; line-height: 2; visibility: visible; position: relative;'>${match.plainLyrics}</div>`;
-                return false;
+                return true; // Se encontró pero no sincronizada
             } else {
-                ui.scroller.innerHTML = "<div class='lyric-line active' style='visibility: visible; position: relative;'>Letra no encontrada en la base. ❌<br><br>¡Canta con el alma y obtén puntos por fluidez! 🎤</div>";
                 return false;
             }
         }
@@ -604,7 +611,7 @@
         
         function stopSyncLoop() { if(syncIntervalId) clearInterval(syncIntervalId); }
 
-        // --- STREAMING_CHUNK:Configuring the strict match speech engine... ---
+        // --- STREAMING_CHUNK:Configuring the strict array-match speech engine... ---
         function setupSpeech() {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SR) { 
@@ -631,15 +638,11 @@
                 
                 ui.voiceTranscript.innerText = final || interim || "Escuchando...";
                 
-                // Procesar coincidencias pasándole solo las últimas palabras pronunciadas
+                // Procesar coincidencias dividiendo en array exacto
                 checkVoiceMatch(newPhrases.trim());
             };
             
-            recognition.onerror = (e) => {
-                if (e.error === 'not-allowed') {
-                    ui.msg.innerText = "❌ Debes permitir el uso del micrófono para continuar.";
-                }
-            };
+            recognition.onerror = (e) => {}; // Ignoramos errores menores para auto-recuperación
 
             recognition.onend = () => { 
                 if (isPlaying) {
@@ -651,7 +654,7 @@
             return true;
         }
 
-        // FUNCIÓN CRÍTICA: Búsqueda exacta y estricta para evitar iluminación adelantada
+        // FUNCIÓN CRÍTICA DE MATCH EXACTO POR ARRAYS
         function checkVoiceMatch(spokenText) {
             if (parsedLyrics.length === 0) {
                 if (spokenText.length > 1) { score += 5; ui.score.innerText = score; }
@@ -660,12 +663,10 @@
 
             if (activeLineIndex === -1) return;
             
-            // Para asegurar el match estricto en toda la frase
-            const spokenNormalized = normalize(spokenText);
-            const paddedSpoken = " " + spokenNormalized + " "; // Padding para buscar palabras exactas
+            // Convertimos la frase hablada en un arreglo de palabras limpias
+            const spokenWordsArray = normalize(spokenText).split(/\s+/).filter(w => w.length > 0);
             
             // SOLO evaluamos la línea actual y la pasada (por si el navegador tardó en procesar la voz)
-            // NUNCA evaluamos la siguiente (activeLineIndex + 1) para evitar pre-iluminación.
             [activeLineIndex - 1, activeLineIndex].forEach(lineIdx => {
                 if (lineIdx < 0 || !parsedLyrics[lineIdx]) return;
                 
@@ -673,18 +674,17 @@
                 line.words.forEach((lineWord, wIdx) => {
                     if (!lineWord.matched && lineWord.clean.length > 0) {
                         
-                        const paddedWord = " " + lineWord.clean + " ";
                         let isMatch = false;
+                        const wordClean = lineWord.clean;
 
-                        // Match exacto como palabra aislada
-                        if (paddedSpoken.includes(paddedWord)) {
+                        // Match exacto en el arreglo
+                        if (spokenWordsArray.includes(wordClean)) {
                             isMatch = true;
                         } 
                         // Match parcial tolerante solo si la palabra de la letra es larga
-                        // Ejemplo: "corazon" en la letra, "corazo" detectado por el micro
-                        else if (lineWord.clean.length >= 5) {
-                            const chunk = lineWord.clean.substring(0, lineWord.clean.length - 1);
-                            if (spokenNormalized.includes(chunk)) {
+                        else if (wordClean.length >= 5) {
+                            const chunk = wordClean.substring(0, wordClean.length - 1);
+                            if (spokenWordsArray.some(sw => sw.includes(chunk))) {
                                 isMatch = true;
                             }
                         }
@@ -784,8 +784,8 @@
             }
         }
 
-        // --- 6. INICIO Y FIN ---
-        ui.startBtn.addEventListener('click', async () => {
+        // --- STREAMING_CHUNK:Handling Modal logic and general Flow... ---
+        async function attemptStartKaraoke() {
             const vId = extractVideoID(ui.url.value);
             if (!vId) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ URL inválida."; return; }
 
@@ -793,34 +793,74 @@
             const artistOverride = ui.artistInput.value.trim();
             const songOverride = ui.songInput.value.trim();
 
+            ui.msg.style.color = "var(--neon-blue)";
             ui.msg.innerText = "Autorizando consola... 🎙️";
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
-                });
+                // Pre-warm Mic
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
                 stream.getTracks().forEach(t => t.stop());
-                
                 if (!setupSpeech()) return;
 
-                ui.home.classList.remove('active');
-                ui.karaoke.classList.add('active');
+                ui.msg.innerText = "Buscando letras... ⏳";
                 
-                score = 0; totalWordsEvaluated = 0; totalWordsMatched = 0;
-                ui.score.innerText = score; activeLineIndex = -1;
-                ui.scroller.style.transform = `translateY(0px)`;
-                ui.voiceTranscript.innerText = "Esperando entrada de consola...";
-                ui.pauseBtn.innerText = "⏸️ Pausar";
-                isPausedManually = false;
-
-                fetchLyricsWithRetry(queryTitle, artistOverride, songOverride);
-
-                startCountdown(() => {
-                    initYouTube(vId);
-                });
+                // Intento buscar letras
+                const lyricsFound = await fetchLyricsWithRetry(queryTitle, artistOverride, songOverride);
+                
+                if (lyricsFound) {
+                    launchKaraokeMode(vId);
+                } else {
+                    // MUESTRA MODAL DE FALLO
+                    ui.msg.innerText = "";
+                    ui.modalArtist.value = artistOverride;
+                    ui.modalSong.value = songOverride;
+                    ui.customModal.style.display = 'flex';
+                }
 
             } catch (err) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ Permite el micrófono."; }
+        }
+
+        function launchKaraokeMode(videoId) {
+            ui.customModal.style.display = 'none';
+            ui.home.classList.remove('active');
+            ui.karaoke.classList.add('active');
+            
+            score = 0; totalWordsEvaluated = 0; totalWordsMatched = 0;
+            ui.score.innerText = score; activeLineIndex = -1;
+            ui.voiceTranscript.innerText = "Esperando entrada de consola...";
+            ui.pauseBtn.innerText = "⏸️ Pausar";
+            isPausedManually = false;
+
+            startCountdown(() => {
+                initYouTube(videoId);
+            });
+        }
+
+        // --- BOTONES PRINCIPALES ---
+        ui.startBtn.addEventListener('click', attemptStartKaraoke);
+
+        // --- BOTONES MODAL ---
+        ui.modalRetryBtn.addEventListener('click', () => {
+            // Pasa datos al formulario principal y reintenta
+            ui.artistInput.value = ui.modalArtist.value;
+            ui.songInput.value = ui.modalSong.value;
+            ui.customModal.style.display = 'none';
+            attemptStartKaraoke();
         });
 
+        ui.modalFreeBtn.addEventListener('click', () => {
+            // Fuerza iniciar a pesar de no haber letra
+            ui.scroller.innerHTML = "<div class='lyric-line active' style='visibility: visible; position: relative;'>¡Modo Libre! Canta con el alma 🎤</div>";
+            const vId = extractVideoID(ui.url.value);
+            launchKaraokeMode(vId);
+        });
+
+        ui.modalCancelBtn.addEventListener('click', () => {
+            ui.customModal.style.display = 'none';
+            ui.msg.innerText = "Operación cancelada.";
+        });
+
+        // --- BOTON TERMINAR ---
         ui.stopBtn.addEventListener('click', () => {
             isPlaying = false;
             stopSyncLoop();
@@ -832,6 +872,7 @@
             ui.voiceWindow.classList.remove('show');
             showResults();
         });
+
     </script>
 </body>
 </html>
