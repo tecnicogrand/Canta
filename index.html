@@ -222,9 +222,9 @@
 
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
-        <div class="version-tag">v1.5 - Optimized</div>
+        <div class="version-tag">Studio v2.0 - Low Latency</div>
         <h1 class="title">Neon Voice Pro</h1>
-        <p class="subtitle">La experiencia definitiva de Karaoke Web</p>
+        <p class="subtitle">Modo Consola Profesional Activo</p>
         <div class="input-box">
             <div class="input-group">
                 <input type="text" id="url-input" placeholder="🔗 Link de YouTube (Requerido)" autocomplete="off">
@@ -233,15 +233,15 @@
             <div class="input-row">
                 <div class="input-group" style="flex:1;">
                     <span class="optional-label">Opcional</span>
-                    <input type="text" id="artist-input" placeholder="🎤 Artista" autocomplete="off" title="Ayuda a encontrar la letra exacta">
+                    <input type="text" id="artist-input" placeholder="🎤 Artista" autocomplete="off" title="Prioriza esta búsqueda">
                 </div>
                 <div class="input-group" style="flex:1;">
                     <span class="optional-label">Opcional</span>
-                    <input type="text" id="song-input" placeholder="🎵 Canción" autocomplete="off" title="Ayuda a encontrar la letra exacta">
+                    <input type="text" id="song-input" placeholder="🎵 Canción" autocomplete="off" title="Prioriza esta búsqueda">
                 </div>
             </div>
 
-            <button id="start-btn" class="btn-start">🎤 Iniciar Karaoke</button>
+            <button id="start-btn" class="btn-start">🎤 Iniciar Sesión</button>
             <div id="setup-msg" class="status-msg"></div>
         </div>
     </div>
@@ -263,8 +263,8 @@
                 <div class="voice-monitor-container">
                     <button id="btn-toggle-voice" class="btn-toggle-voice">🎙️ Monitor de Voz</button>
                     <div id="voice-monitor-window" class="voice-monitor-window">
-                        <div class="voice-monitor-title">🎤 Análisis en Vivo:</div>
-                        <div id="voice-transcript" class="voice-transcript">Esperando entrada de audio...</div>
+                        <div class="voice-monitor-title">🎤 Análisis en Vivo (Baja Latencia):</div>
+                        <div id="voice-transcript" class="voice-transcript">Esperando entrada de consola...</div>
                     </div>
                 </div>
             </div>
@@ -372,7 +372,7 @@
             const url = ui.url.value.trim();
             if(extractVideoID(url)) {
                 ui.msg.style.color = "var(--neon-blue)";
-                ui.msg.innerText = "🔍 Analizando el título original del video...";
+                ui.msg.innerText = "🔍 Analizando enlace...";
                 fetchTimeout = setTimeout(() => fetchVideoTitle(url), 500); 
             }
         });
@@ -388,7 +388,7 @@
                 if (!res.ok) throw new Error("Network error");
                 const data = await res.json();
                 if (data.title) {
-                    ui.msg.innerText = "✅ Título procesado. Llena los datos opcionales si lo deseas.";
+                    ui.msg.innerText = "✅ Título procesado. Llena Artista/Canción si lo deseas.";
                     ui.url.dataset.title = data.title;
                 } else throw new Error("No title");
             } catch (e) {
@@ -403,13 +403,13 @@
             const searchUrls = [];
             const normalizeStr = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
-            // PRIORIDAD 1: Usar los campos opcionales del usuario si los llenó
+            // PRIORIDAD 1: Campos manuales del usuario (Mayor precisión)
             if (artistOverride && songOverride) {
                 searchUrls.push(`https://lrclib.net/api/search?track_name=${encodeURIComponent(songOverride)}&artist_name=${encodeURIComponent(artistOverride)}`);
                 searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(songOverride + " " + artistOverride)}`);
             }
 
-            // PRIORIDAD 2: Procesar el título de YouTube
+            // PRIORIDAD 2: Procesar el título de YouTube si es válido
             if(originalTitle !== "Unknown") {
                 let cleanTitle = originalTitle.replace(/\[.*?\]|\(.*?\)|【.*?】|「.*?」/g, ' ').trim();
                 cleanTitle = cleanTitle.replace(/(official|music|video|lyric|lyrics|audio|hd|4k|hq|remix)/gi, ' ').trim();
@@ -435,7 +435,7 @@
             }
 
             if(searchUrls.length === 0) {
-                 ui.scroller.innerHTML = "<div class='lyric-line active' style='visibility: visible; position: relative;'>Faltan datos de la canción. ❌<br><br>¡Canta con el alma! 🎤</div>";
+                 ui.scroller.innerHTML = "<div class='lyric-line active' style='visibility: visible; position: relative;'>Faltan datos para buscar. ❌<br><br>¡Canta con el alma! 🎤</div>";
                  return false;
             }
 
@@ -466,7 +466,7 @@
             }
         }
 
-        // --- 2. PARSEO LRC ---
+        // --- 2. PARSEO LRC Y CÁLCULO DE TIEMPOS ---
         function parseLRC(lrcString) {
             const lines = lrcString.split('\n');
             const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
@@ -590,7 +590,7 @@
         
         function stopSyncLoop() { if(syncIntervalId) clearInterval(syncIntervalId); }
 
-        // --- 4. RECONOCIMIENTO DE VOZ AVANZADO ---
+        // --- 4. RECONOCIMIENTO DE VOZ AVANZADO (CERO LATENCIA) ---
         function setupSpeech() {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SR) { alert("Navegador no compatible. Usa Google Chrome o Edge."); return false; }
@@ -630,12 +630,12 @@
                 console.warn("Error en el micrófono:", e.error);
             };
 
-            // Auto-recuperación robusta
+            // Auto-recuperación robusta (soluciona pausas largas o desconexiones de la consola)
             recognition.onend = () => { 
                 if (isPlaying) {
                     setTimeout(() => {
                         try { recognition.start(); } catch(err){}
-                    }, 200);
+                    }, 100);
                 }
             };
             return true;
@@ -649,18 +649,18 @@
 
             if (activeLineIndex === -1) return;
             
-            // Filtro > 0 para detectar palabras de 1 o 2 letras ("Ay", "Y", "Oh")
+            // Evaluamos TODAS las palabras (length > 0) para detectar sílabas o palabras cortas ("Ay", "Y", "Oh")
             const spokenWords = spokenText.split(/\s+/).map(w => normalize(w)).filter(w => w.length > 0);
             
-            // Optimizacion: Limitar a las ultimas 20 palabras por si el chunk creció mucho
-            const recentWords = spokenWords.slice(-20);
+            // Optimizacion para baja latencia: Limitar a las últimas 15 palabras del buffer
+            const recentWords = spokenWords.slice(-15);
             
             [activeLineIndex - 2, activeLineIndex - 1, activeLineIndex, activeLineIndex + 1].forEach(lineIdx => {
                 if (lineIdx < 0 || !parsedLyrics[lineIdx]) return;
                 
                 const line = parsedLyrics[lineIdx];
                 line.words.forEach((lineWord, wIdx) => {
-                    // Evalúa TODAS las palabras
+                    // Solo evaluar palabras mayores a 0 caracteres
                     if (!lineWord.matched && lineWord.clean.length > 0) {
                         const isMatch = recentWords.some(sw => {
                             if (sw === lineWord.clean) return true;
@@ -735,11 +735,11 @@
                     },
                     events: { 
                         'onReady': (event) => {
-                            event.target.setVolume(100);
+                            event.target.setVolume(100); // Forzar volumen al máximo para la bocina
                         },
                         'onStateChange': (e) => {
                             if (e.data === YT.PlayerState.PLAYING) {
-                                player.setVolume(100);
+                                player.setVolume(100); // Reafirmar volumen
                                 ui.pauseBtn.innerText = "⏸️ Pausar";
                                 
                                 isPlaying = true;
@@ -773,9 +773,16 @@
             const artistOverride = ui.artistInput.value.trim();
             const songOverride = ui.songInput.value.trim();
 
-            ui.msg.innerText = "Autorizando micrófono... 🎙️";
+            ui.msg.innerText = "Autorizando consola... 🎙️";
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // APAGAR FILTROS DEL NAVEGADOR PARA RECIBIR AUDIO PROFESIONAL RAW
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    } 
+                });
                 stream.getTracks().forEach(t => t.stop());
                 
                 if (!setupSpeech()) return;
@@ -786,7 +793,7 @@
                 score = 0; totalWordsEvaluated = 0; totalWordsMatched = 0;
                 ui.score.innerText = score; activeLineIndex = -1;
                 ui.scroller.style.transform = `translateY(0px)`;
-                ui.voiceTranscript.innerText = "Esperando entrada de audio...";
+                ui.voiceTranscript.innerText = "Esperando entrada de consola...";
                 ui.pauseBtn.innerText = "⏸️ Pausar";
                 isPausedManually = false;
 
