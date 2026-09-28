@@ -25,7 +25,6 @@
         }
         .screen.active { display: flex; animation: fadeIn 0.5s ease-out; }
 
-        /* --- PANTALLA INICIO --- */
         #home-screen { background: radial-gradient(circle at 50% 50%, #151520 0%, #050505 100%); position: relative; }
         
         .version-tag {
@@ -85,7 +84,6 @@
         .modal-text { color: #aaa; margin-bottom: 25px; line-height: 1.5;}
         .modal-btn-row { display: flex; flex-direction: column; gap: 10px; margin-top: 25px;}
 
-        /* --- KARAOKE UI --- */
         .video-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; background: #000; will-change: transform;}
         .video-bg iframe {
             width: 100vw; height: 56.25vw; min-height: 100vh; min-width: 177.77vh;
@@ -132,6 +130,15 @@
         .feedback-badge.perfect { color: var(--gold); }
         .feedback-badge.good { color: var(--neon-blue); }
 
+        .instrumental-timer {
+            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
+            font-size: 1.5rem; font-weight: 800; color: var(--gold);
+            background: rgba(0,0,0,0.8); padding: 10px 30px; border-radius: 30px;
+            border: 1px solid var(--gold); box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            opacity: 0; transition: opacity 0.3s; z-index: 10; pointer-events: none;
+        }
+        .instrumental-timer.show { opacity: 1; }
+
         .lyrics-viewport {
             flex-grow: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center;
             mask-image: linear-gradient(transparent 5%, black 35%, black 65%, transparent 95%);
@@ -153,6 +160,13 @@
         .lyric-line.past { opacity: 0.3; transform: scale(0.9); visibility: visible; position: relative; }
         .lyric-line.active { opacity: 1; transform: scale(1.3); text-shadow: 0 0 20px rgba(255,255,255,0.4); visibility: visible; position: relative; }
         .lyric-line.upcoming { opacity: 0.3; transform: scale(0.9); visibility: visible; position: relative; }
+
+        /* Estilo para cuando la línea está esperando a ser cantada (Tiempos muertos) */
+        .lyric-line.active.waiting-mode {
+            color: var(--gold); opacity: 0.7; transform: scale(1.1);
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            animation: pulseWait 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
         .karaoke-word { display: inline-block; position: relative; margin-right: 8px; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
         .karaoke-word-fill {
@@ -202,6 +216,7 @@
         .countdown-text { color: #fff; font-size: 2rem; margin-top: 20px; font-weight: bold; letter-spacing: 5px; text-transform: uppercase;}
         
         @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+        @keyframes pulseWait { 0% { opacity: 0.5; transform: scale(1.1);} 50% { opacity: 1; transform: scale(1.15);} 100% { opacity: 0.5; transform: scale(1.1);} }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -234,11 +249,10 @@
         </div>
     </div>
 
-    <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
         <div class="version-tag">
-            Studio v1.7
-            <div class="changelog">Motor Secuencial (Cero Adelantos)</div>
+            Studio v1.8
+            <div class="changelog">Indicador de Tiempos Muertos</div>
         </div>
         <h1 class="title">Neon Voice Pro</h1>
         <p class="subtitle">Modo Consola Profesional Activo</p>
@@ -286,6 +300,8 @@
                 </div>
             </div>
 
+            <div id="instrumental-timer" class="instrumental-timer">⏳ Tiempos muertos... 10s</div>
+
             <div class="lyrics-viewport">
                 <div class="lyrics-scroller" id="lyrics-scroller"></div>
             </div>
@@ -311,14 +327,13 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     
     <script>
-        // --- ESTADO GLOBAL ---
         let player, recognition;
         let score = 0, totalWordsEvaluated = 0, totalWordsMatched = 0;
         let isPlaying = false, isPausedManually = false;
         let parsedLyrics = [], activeLineIndex = -1;
         let syncIntervalId;
+        let wasWaiting = false; // Rastrea si estábamos en un tiempo muerto en el frame anterior
 
-        // --- DOM ---
         const ui = {
             home: document.getElementById('home-screen'), karaoke: document.getElementById('karaoke-screen'),
             results: document.getElementById('results-screen'), customModal: document.getElementById('custom-modal'),
@@ -334,10 +349,10 @@
             badge: document.getElementById('feedback-badge'), btnToggleVoice: document.getElementById('btn-toggle-voice'),
             voiceWindow: document.getElementById('voice-monitor-window'), voiceTranscript: document.getElementById('voice-transcript'),
             finalScore: document.getElementById('final-score'), finalStats: document.getElementById('final-stats'),
-            countdownOverlay: document.getElementById('countdown-overlay'), countdownNumber: document.getElementById('countdown-number')
+            countdownOverlay: document.getElementById('countdown-overlay'), countdownNumber: document.getElementById('countdown-number'),
+            instrumentalTimer: document.getElementById('instrumental-timer')
         };
 
-        // --- FUNCIONES DE INTERFAZ Y CONTROLES ---
         function startCountdown(callback) {
             ui.countdownOverlay.classList.add('show');
             let count = 3;
@@ -384,7 +399,6 @@
             ui.msg.innerText = "";
         });
 
-        // --- BÚSQUEDA DE VIDEO Y LETRAS ---
         let fetchTimeout;
         ui.url.addEventListener('input', () => {
             clearTimeout(fetchTimeout);
@@ -478,7 +492,6 @@
             }
         }
 
-        // --- PARSEO LRC Y RENDERIZADO VISUAL ---
         function parseLRC(lrcString) {
             const lines = lrcString.split('\n');
             const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
@@ -554,20 +567,48 @@
                 
                 const currentTime = player.getCurrentTime();
                 let newActiveIndex = -1;
+                let isWaiting = false;
+                let timeToNext = 0;
 
-                for (let i = parsedLyrics.length - 1; i >= 0; i--) {
-                    if (currentTime >= parsedLyrics[i].time - 0.1) {
-                        newActiveIndex = i; break;
+                // 1. Verificar si estamos activamente cantando una línea
+                for (let i = 0; i < parsedLyrics.length; i++) {
+                    const line = parsedLyrics[i];
+                    // La línea termina cuando finaliza su última palabra + un pequeño margen
+                    const lastWordEndTime = line.words[line.words.length - 1].endTime;
+                    const lineEndTime = lastWordEndTime + 1.0; 
+                    
+                    if (currentTime >= line.time - 0.2 && currentTime <= lineEndTime) {
+                        newActiveIndex = i;
+                        break;
                     }
                 }
 
+                // 2. Si no hay línea activa, estamos en un tiempo muerto instrumental
+                if (newActiveIndex === -1) {
+                    for (let i = 0; i < parsedLyrics.length; i++) {
+                        if (parsedLyrics[i].time > currentTime) {
+                            newActiveIndex = i;
+                            isWaiting = true;
+                            timeToNext = parsedLyrics[i].time - currentTime;
+                            break;
+                        }
+                    }
+                }
+
+                // 3. Si la canción ya terminó, quedarnos en la última línea
+                if (newActiveIndex === -1 && parsedLyrics.length > 0) {
+                    newActiveIndex = parsedLyrics.length - 1;
+                }
+
+                // 4. Lógica de Cambio de Línea
                 if (newActiveIndex !== activeLineIndex && newActiveIndex !== -1) {
                     
-                    if(activeLineIndex !== -1) {
+                    // Solo evaluamos la línea si estábamos activamente cantándola (no esperando)
+                    if(activeLineIndex !== -1 && !wasWaiting) {
                         const oldLine = parsedLyrics[activeLineIndex];
                         oldLine.words.forEach((w, wIdx) => {
                              const fillEl = document.getElementById(`word-fill-${activeLineIndex}-${wIdx}`);
-                             if (fillEl) fillEl.style.width = '100%';
+                             if (fillEl) fillEl.style.width = '100%'; // Llenado forzado al terminar
                         });
                         evaluateLineCompletion(activeLineIndex);
                     }
@@ -582,6 +623,7 @@
                         else if (index === activeLineIndex + 1) el.classList.add('upcoming');
                     });
 
+                    // Centrado exacto
                     const activeEl = document.getElementById(`line-${activeLineIndex}`);
                     if (activeEl) {
                         const viewportHalf = ui.viewport.offsetHeight / 2;
@@ -591,7 +633,27 @@
                     }
                 }
 
-                if (activeLineIndex !== -1 && parsedLyrics[activeLineIndex]) {
+                // 5. Aplicar Modo de Espera y Temporizador Instrumental
+                const activeEl = document.getElementById(`line-${activeLineIndex}`);
+                if (activeEl) {
+                    if (isWaiting) {
+                        activeEl.classList.add('waiting-mode');
+                    } else {
+                        activeEl.classList.remove('waiting-mode');
+                    }
+                }
+
+                if (isWaiting && timeToNext > 2) {
+                    ui.instrumentalTimer.classList.add('show');
+                    ui.instrumentalTimer.innerText = `⏳ Tiempos muertos... ${Math.ceil(timeToNext)}s`;
+                } else {
+                    ui.instrumentalTimer.classList.remove('show');
+                }
+
+                wasWaiting = isWaiting;
+
+                // 6. Efecto de barrido de color (solo si no estamos esperando)
+                if (activeLineIndex !== -1 && parsedLyrics[activeLineIndex] && !isWaiting) {
                     const line = parsedLyrics[activeLineIndex];
                     line.words.forEach((w, wIdx) => {
                         const fillEl = document.getElementById(`word-fill-${activeLineIndex}-${wIdx}`);
@@ -609,7 +671,6 @@
         
         function stopSyncLoop() { if(syncIntervalId) clearInterval(syncIntervalId); }
 
-        // --- SISTEMA DE RECONOCIMIENTO DE VOZ PROFESIONAL ---
         function setupSpeech() {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SR) { 
@@ -665,40 +726,32 @@
 
             const currentTime = player.getCurrentTime();
             
-            // Evaluamos línea actual y anterior para perdonar el lag del navegador
             [activeLineIndex - 1, activeLineIndex].forEach(lineIdx => {
                 if (lineIdx < 0 || !parsedLyrics[lineIdx]) return;
                 
                 const line = parsedLyrics[lineIdx];
                 
-                // Mantenemos un "Cursor" de la primera palabra no acertada
                 let firstUnmatchedIdx = line.words.findIndex(w => !w.matched && w.clean.length > 0);
-                if (firstUnmatchedIdx === -1) return; // Línea ya completada
+                if (firstUnmatchedIdx === -1) return; 
 
                 line.words.forEach((lineWord, wIdx) => {
                     if (!lineWord.matched && lineWord.clean.length > 0) {
                         
-                        // REGLA 1: No permitir que el usuario se salte más de 2 palabras (Secuencialidad)
                         if (wIdx > firstUnmatchedIdx + 2) return;
-                        
-                        // REGLA 2: No permitir evaluar palabras que están más de 0.5s en el futuro
-                        if (currentTime < lineWord.startTime - 0.5) return;
+                        if (currentTime < lineWord.startTime - 0.5) return; // Si es tiempo muerto y falta mucho, bloquea.
 
                         let isMatch = false;
                         const wordClean = lineWord.clean;
 
-                        // Match exacto
                         if (spokenWordsArray.includes(wordClean)) {
                             isMatch = true;
                         } 
-                        // Match súper tolerante (comparten raíz)
                         else if (wordClean.length >= 3) {
                             const prefix = wordClean.substring(0, 3);
                             if (spokenWordsArray.some(sw => sw.includes(wordClean) || wordClean.includes(sw) || sw.startsWith(prefix))) {
                                 isMatch = true;
                             }
                         }
-                        // Tolerancia automática para conectores (y, el, la) SÓLO si es exactamente su turno en la secuencia
                         else if (wordClean.length <= 2) {
                             if (wIdx === firstUnmatchedIdx) {
                                 isMatch = true;
@@ -712,7 +765,6 @@
                             const wordWrapEl = document.getElementById(`word-wrap-${lineIdx}-${wIdx}`);
                             if (wordWrapEl) wordWrapEl.classList.add('voice-matched');
                             
-                            // Actualizar el cursor dinámicamente en el mismo ciclo
                             firstUnmatchedIdx = line.words.findIndex(w => !w.matched && w.clean.length > 0);
                         }
                     }
@@ -759,7 +811,6 @@
             else ui.finalStats.innerText += " 🎤 ¡Sigue practicando!";
         }
 
-        // --- YOUTUBE LIFECYCLE ---
         function onYouTubeIframeAPIReady() {}
         function initYouTube(videoId) {
             if (player) { 
@@ -794,7 +845,7 @@
                                 isPlaying = false;
                                 stopSyncLoop();
                                 if (recognition) recognition.stop();
-                                if(activeLineIndex !== -1) evaluateLineCompletion(activeLineIndex);
+                                if(activeLineIndex !== -1 && !wasWaiting) evaluateLineCompletion(activeLineIndex);
                                 showResults();
                             }
                         }
@@ -803,7 +854,6 @@
             }
         }
 
-        // --- MANEJO DE BOTONES Y MODAL ---
         async function attemptStartKaraoke() {
             const vId = extractVideoID(ui.url.value);
             if (!vId) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ URL inválida."; return; }
@@ -843,9 +893,11 @@
             
             score = 0; totalWordsEvaluated = 0; totalWordsMatched = 0;
             ui.score.innerText = score; activeLineIndex = -1;
+            ui.scroller.style.transform = `translateY(0px)`;
             ui.voiceTranscript.innerText = "Esperando entrada de consola...";
             ui.pauseBtn.innerText = "⏸️ Pausar";
             isPausedManually = false;
+            wasWaiting = false;
 
             startCountdown(() => {
                 initYouTube(videoId);
@@ -878,7 +930,7 @@
             if (recognition) recognition.stop();
             if (player?.stopVideo) player.stopVideo();
             
-            if(activeLineIndex !== -1) evaluateLineCompletion(activeLineIndex);
+            if(activeLineIndex !== -1 && !wasWaiting) evaluateLineCompletion(activeLineIndex);
             
             ui.voiceWindow.classList.remove('show');
             showResults();
