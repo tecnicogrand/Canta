@@ -237,8 +237,8 @@
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
         <div class="version-tag">
-            Studio v1.5
-            <div class="changelog">Smart Fallback & Sync Fix</div>
+            Studio v1.6
+            <div class="changelog">Sync Ajustado & Detección Tolerante</div>
         </div>
         <h1 class="title">Neon Voice Pro</h1>
         <p class="subtitle">Modo Consola Profesional Activo</p>
@@ -558,7 +558,8 @@
                 let newActiveIndex = -1;
 
                 for (let i = parsedLyrics.length - 1; i >= 0; i--) {
-                    if (currentTime >= parsedLyrics[i].time - 0.3) {
+                    // Se redujo la anticipación de 0.3 a 0.1 segundos para no adelantarse a la canción
+                    if (currentTime >= parsedLyrics[i].time - 0.1) {
                         newActiveIndex = i; break;
                     }
                 }
@@ -681,12 +682,17 @@
                         if (spokenWordsArray.includes(wordClean)) {
                             isMatch = true;
                         } 
-                        // Match parcial tolerante solo si la palabra de la letra es larga
-                        else if (wordClean.length >= 5) {
-                            const chunk = wordClean.substring(0, wordClean.length - 1);
-                            if (spokenWordsArray.some(sw => sw.includes(chunk))) {
+                        // Match súper tolerante para palabras medias/largas
+                        else if (wordClean.length >= 3) {
+                            const prefix = wordClean.substring(0, 3);
+                            // Si la palabra hablada incluye la letra, la letra incluye la hablada, o comparten las primeras 3 letras
+                            if (spokenWordsArray.some(sw => sw.includes(wordClean) || wordClean.includes(sw) || sw.startsWith(prefix))) {
                                 isMatch = true;
                             }
+                        }
+                        // Tolerancia automática para conectores o palabras cortas (de, a, y, el, tú) si el usuario hizo algún sonido cercano
+                        else if (wordClean.length <= 2 && spokenWordsArray.length > 0) {
+                            isMatch = true;
                         }
 
                         if (isMatch) {
