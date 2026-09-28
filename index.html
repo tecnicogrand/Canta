@@ -231,7 +231,7 @@
 
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
-        <div class="version-tag">Studio v1.4 - Zero Latency</div>
+        <div class="version-tag">Studio v1.3 - Exact Match</div>
         <h1 class="title">Neon Voice Pro</h1>
         <p class="subtitle">Modo Consola Profesional Activo</p>
         <div class="input-box">
@@ -325,7 +325,7 @@
             countdownOverlay: document.getElementById('countdown-overlay'), countdownNumber: document.getElementById('countdown-number')
         };
 
-        // --- FUNCIONES DE CONTADOR ---
+        // --- STREAMING_CHUNK:Defining Countdown and UI interaction logic... ---
         function startCountdown(callback) {
             ui.countdownOverlay.classList.add('show');
             let count = 3;
@@ -347,7 +347,6 @@
             }, 1000);
         }
 
-        // --- CONTROLES DE INTERFAZ ---
         ui.btnToggleVoice.addEventListener('click', () => { ui.voiceWindow.classList.toggle('show'); });
 
         ui.pauseBtn.addEventListener('click', () => {
@@ -374,7 +373,7 @@
             ui.msg.innerText = "";
         });
 
-        // --- 1. EXTRACCIÓN Y BÚSQUEDA ---
+        // --- STREAMING_CHUNK:Loading extraction and lyrics search algorithms... ---
         let fetchTimeout;
         ui.url.addEventListener('input', () => {
             clearTimeout(fetchTimeout);
@@ -412,13 +411,11 @@
             const searchUrls = [];
             const normalizeStr = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
-            // PRIORIDAD 1: Campos manuales del usuario (Mayor precisión)
             if (artistOverride && songOverride) {
                 searchUrls.push(`https://lrclib.net/api/search?track_name=${encodeURIComponent(songOverride)}&artist_name=${encodeURIComponent(artistOverride)}`);
                 searchUrls.push(`https://lrclib.net/api/search?q=${encodeURIComponent(songOverride + " " + artistOverride)}`);
             }
 
-            // PRIORIDAD 2: Procesar el título de YouTube si es válido
             if(originalTitle !== "Unknown") {
                 let cleanTitle = originalTitle.replace(/\[.*?\]|\(.*?\)|【.*?】|「.*?」/g, ' ').trim();
                 cleanTitle = cleanTitle.replace(/(official|music|video|lyric|lyrics|audio|hd|4k|hq|remix)/gi, ' ').trim();
@@ -475,6 +472,7 @@
             }
         }
 
+        // --- STREAMING_CHUNK:Parsing LRC strings and managing timestamps... ---
         function parseLRC(lrcString) {
             const lines = lrcString.split('\n');
             const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
@@ -542,6 +540,7 @@
             ui.scroller.style.transform = `translateY(0px)`;
         }
 
+        // --- STREAMING_CHUNK:Setting up exact matching loop and visual animation... ---
         function startSyncLoop() {
              if(syncIntervalId) clearInterval(syncIntervalId);
              
@@ -560,7 +559,6 @@
                 if (newActiveIndex !== activeLineIndex && newActiveIndex !== -1) {
                     
                     if(activeLineIndex !== -1) {
-                        // Force fill old line to 100% so it doesn't get stuck halfway visually
                         const oldLine = parsedLyrics[activeLineIndex];
                         oldLine.words.forEach((w, wIdx) => {
                              const fillEl = document.getElementById(`word-fill-${activeLineIndex}-${wIdx}`);
@@ -592,8 +590,6 @@
                     const line = parsedLyrics[activeLineIndex];
                     line.words.forEach((w, wIdx) => {
                         const fillEl = document.getElementById(`word-fill-${activeLineIndex}-${wIdx}`);
-                        // If it's voice-matched, CSS handles the 100% width automatically now.
-                        // Only animate un-matched words with time.
                         if (fillEl && !w.matched) {
                             if (currentTime >= w.endTime) fillEl.style.width = '100%';
                             else if (currentTime >= w.startTime && currentTime < w.endTime) {
@@ -608,6 +604,7 @@
         
         function stopSyncLoop() { if(syncIntervalId) clearInterval(syncIntervalId); }
 
+        // --- STREAMING_CHUNK:Configuring the strict match speech engine... ---
         function setupSpeech() {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SR) { 
@@ -619,7 +616,7 @@
             recognition.continuous = true; 
             recognition.interimResults = true; 
             recognition.lang = 'es-ES';
-            recognition.maxAlternatives = 2; // Reduced for faster processing speed
+            recognition.maxAlternatives = 1; 
 
             recognition.onresult = (e) => {
                 let interim = ""; let final = "";
@@ -629,18 +626,16 @@
                     const res = e.results[i];
                     if(res.isFinal) final += res[0].transcript + " ";
                     else interim += res[0].transcript + " ";
-                    
-                    for(let j=0; j<res.length; j++) {
-                        newPhrases += res[j].transcript + " ";
-                    }
+                    newPhrases += res[0].transcript + " ";
                 }
                 
                 ui.voiceTranscript.innerText = final || interim || "Escuchando...";
+                
+                // Procesar coincidencias pasándole solo las últimas palabras pronunciadas
                 checkVoiceMatch(newPhrases.trim());
             };
             
             recognition.onerror = (e) => {
-                console.warn("Error en el micrófono:", e.error);
                 if (e.error === 'not-allowed') {
                     ui.msg.innerText = "❌ Debes permitir el uso del micrófono para continuar.";
                 }
@@ -650,12 +645,13 @@
                 if (isPlaying) {
                     setTimeout(() => {
                         try { recognition.start(); } catch(err){}
-                    }, 50); // Faster restart
+                    }, 50); 
                 }
             };
             return true;
         }
 
+        // FUNCIÓN CRÍTICA: Búsqueda exacta y estricta para evitar iluminación adelantada
         function checkVoiceMatch(spokenText) {
             if (parsedLyrics.length === 0) {
                 if (spokenText.length > 1) { score += 5; ui.score.innerText = score; }
@@ -664,31 +660,41 @@
 
             if (activeLineIndex === -1) return;
             
-            const spokenWords = spokenText.split(/\s+/).map(w => normalize(w)).filter(w => w.length > 0);
-            const recentWords = spokenWords.slice(-10); // Check only the absolute freshest chunks for zero-latency feel
+            // Para asegurar el match estricto en toda la frase
+            const spokenNormalized = normalize(spokenText);
+            const paddedSpoken = " " + spokenNormalized + " "; // Padding para buscar palabras exactas
             
-            [activeLineIndex - 2, activeLineIndex - 1, activeLineIndex, activeLineIndex + 1].forEach(lineIdx => {
+            // SOLO evaluamos la línea actual y la pasada (por si el navegador tardó en procesar la voz)
+            // NUNCA evaluamos la siguiente (activeLineIndex + 1) para evitar pre-iluminación.
+            [activeLineIndex - 1, activeLineIndex].forEach(lineIdx => {
                 if (lineIdx < 0 || !parsedLyrics[lineIdx]) return;
                 
                 const line = parsedLyrics[lineIdx];
                 line.words.forEach((lineWord, wIdx) => {
                     if (!lineWord.matched && lineWord.clean.length > 0) {
-                        const isMatch = recentWords.some(sw => {
-                            if (sw === lineWord.clean) return true;
-                            if (sw.length >= 2 && lineWord.clean.length >= 2) {
-                                return lineWord.clean.includes(sw) || sw.includes(lineWord.clean);
+                        
+                        const paddedWord = " " + lineWord.clean + " ";
+                        let isMatch = false;
+
+                        // Match exacto como palabra aislada
+                        if (paddedSpoken.includes(paddedWord)) {
+                            isMatch = true;
+                        } 
+                        // Match parcial tolerante solo si la palabra de la letra es larga
+                        // Ejemplo: "corazon" en la letra, "corazo" detectado por el micro
+                        else if (lineWord.clean.length >= 5) {
+                            const chunk = lineWord.clean.substring(0, lineWord.clean.length - 1);
+                            if (spokenNormalized.includes(chunk)) {
+                                isMatch = true;
                             }
-                            return false;
-                        });
+                        }
 
                         if (isMatch) {
                             lineWord.matched = true;
                             score += 20; ui.score.innerText = score; totalWordsMatched++;
                             
                             const wordWrapEl = document.getElementById(`word-wrap-${lineIdx}-${wIdx}`);
-                            if (wordWrapEl) {
-                                wordWrapEl.classList.add('voice-matched');
-                            }
+                            if (wordWrapEl) wordWrapEl.classList.add('voice-matched');
                         }
                     }
                 });
@@ -734,6 +740,7 @@
             else ui.finalStats.innerText += " 🎤 ¡Sigue practicando!";
         }
 
+        // --- STREAMING_CHUNK:Preparing YouTube lifecycle bindings... ---
         function onYouTubeIframeAPIReady() {}
         function initYouTube(videoId) {
             if (player) { 
