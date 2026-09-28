@@ -157,8 +157,17 @@
             color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); transition: width 0.1s linear;
         }
 
-        .karaoke-word.voice-matched .karaoke-word-fill { color: var(--gold); text-shadow: 0 0 20px var(--gold); }
-        .karaoke-word.voice-matched { transform: translateY(-5px); transition: transform 0.2s; }
+        /* CRITICAL FIX: Ensure matched words pop to 100% width immediately to fix half-filled words */
+        .karaoke-word.voice-matched .karaoke-word-fill { 
+            color: var(--gold); 
+            text-shadow: 0 0 20px var(--gold); 
+            width: 100% !important; /* Forces complete fill */
+            transition: width 0.1s ease-out;
+        }
+        .karaoke-word.voice-matched { 
+            transform: translateY(-5px) scale(1.05); 
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
 
         .controls { display: flex; justify-content: center; gap: 20px; padding: 20px; z-index: 10; height: 100px; align-items: center;}
         
@@ -222,7 +231,7 @@
 
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
-        <div class="version-tag">Studio v2.0 - Low Latency</div>
+        <div class="version-tag">Studio v1.4 - Zero Latency</div>
         <h1 class="title">Neon Voice Pro</h1>
         <p class="subtitle">Modo Consola Profesional Activo</p>
         <div class="input-box">
@@ -466,7 +475,6 @@
             }
         }
 
-        // --- 2. PARSEO LRC Y CÁLCULO DE TIEMPOS ---
         function parseLRC(lrcString) {
             const lines = lrcString.split('\n');
             const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
@@ -508,7 +516,6 @@
 
         function normalize(str) { return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ""); }
 
-        // --- 3. RENDERIZADO VISUAL ---
         function renderLyrics() {
             ui.scroller.innerHTML = "";
             parsedLyrics.forEach((line, i) => {
@@ -551,7 +558,16 @@
                 }
 
                 if (newActiveIndex !== activeLineIndex && newActiveIndex !== -1) {
-                    if(activeLineIndex !== -1) evaluateLineCompletion(activeLineIndex);
+                    
+                    if(activeLineIndex !== -1) {
+                        // Force fill old line to 100% so it doesn't get stuck halfway visually
+                        const oldLine = parsedLyrics[activeLineIndex];
+                        oldLine.words.forEach((w, wIdx) => {
+                             const fillEl = document.getElementById(`word-fill-${activeLineIndex}-${wIdx}`);
+                             if (fillEl) fillEl.style.width = '100%';
+                        });
+                        evaluateLineCompletion(activeLineIndex);
+                    }
 
                     activeLineIndex = newActiveIndex;
                     
@@ -576,7 +592,9 @@
                     const line = parsedLyrics[activeLineIndex];
                     line.words.forEach((w, wIdx) => {
                         const fillEl = document.getElementById(`word-fill-${activeLineIndex}-${wIdx}`);
-                        if (fillEl) {
+                        // If it's voice-matched, CSS handles the 100% width automatically now.
+                        // Only animate un-matched words with time.
+                        if (fillEl && !w.matched) {
                             if (currentTime >= w.endTime) fillEl.style.width = '100%';
                             else if (currentTime >= w.startTime && currentTime < w.endTime) {
                                 const percent = ((currentTime - w.startTime) / (w.endTime - w.startTime)) * 100;
@@ -590,52 +608,49 @@
         
         function stopSyncLoop() { if(syncIntervalId) clearInterval(syncIntervalId); }
 
-        // --- 4. RECONOCIMIENTO DE VOZ AVANZADO (CERO LATENCIA) ---
         function setupSpeech() {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) { alert("Navegador no compatible. Usa Google Chrome o Edge."); return false; }
+            if (!SR) { 
+                ui.msg.innerText = "❌ Navegador no compatible. Usa Chrome o Edge.";
+                return false; 
+            }
 
             recognition = new SR();
             recognition.continuous = true; 
             recognition.interimResults = true; 
             recognition.lang = 'es-ES';
-            // Obtenemos múltiples alternativas para no fallar
-            recognition.maxAlternatives = 3;
+            recognition.maxAlternatives = 2; // Reduced for faster processing speed
 
             recognition.onresult = (e) => {
                 let interim = ""; let final = "";
-                let newPhrases = ""; // Solo comparamos lo más reciente para evitar lag
+                let newPhrases = ""; 
 
                 for (let i = e.resultIndex; i < e.results.length; ++i) {
                     const res = e.results[i];
-                    if(res.isFinal) {
-                        final += res[0].transcript + " ";
-                    } else {
-                        interim += res[0].transcript + " ";
-                    }
+                    if(res.isFinal) final += res[0].transcript + " ";
+                    else interim += res[0].transcript + " ";
                     
-                    // Extraer todas las alternativas de este frame para máxima precisión
                     for(let j=0; j<res.length; j++) {
                         newPhrases += res[j].transcript + " ";
                     }
                 }
                 
                 ui.voiceTranscript.innerText = final || interim || "Escuchando...";
-                
-                // Pasamos únicamente el bloque nuevo al comparador para que sea instantáneo
                 checkVoiceMatch(newPhrases.trim());
             };
             
             recognition.onerror = (e) => {
                 console.warn("Error en el micrófono:", e.error);
+                if (e.error === 'not-allowed') {
+                    ui.msg.innerText = "❌ Debes permitir el uso del micrófono para continuar.";
+                }
             };
 
-            // Auto-recuperación robusta (soluciona pausas largas o desconexiones de la consola)
             recognition.onend = () => { 
                 if (isPlaying) {
                     setTimeout(() => {
                         try { recognition.start(); } catch(err){}
-                    }, 100);
+                    }, 50); // Faster restart
                 }
             };
             return true;
@@ -649,18 +664,14 @@
 
             if (activeLineIndex === -1) return;
             
-            // Evaluamos TODAS las palabras (length > 0) para detectar sílabas o palabras cortas ("Ay", "Y", "Oh")
             const spokenWords = spokenText.split(/\s+/).map(w => normalize(w)).filter(w => w.length > 0);
-            
-            // Optimizacion para baja latencia: Limitar a las últimas 15 palabras del buffer
-            const recentWords = spokenWords.slice(-15);
+            const recentWords = spokenWords.slice(-10); // Check only the absolute freshest chunks for zero-latency feel
             
             [activeLineIndex - 2, activeLineIndex - 1, activeLineIndex, activeLineIndex + 1].forEach(lineIdx => {
                 if (lineIdx < 0 || !parsedLyrics[lineIdx]) return;
                 
                 const line = parsedLyrics[lineIdx];
                 line.words.forEach((lineWord, wIdx) => {
-                    // Solo evaluar palabras mayores a 0 caracteres
                     if (!lineWord.matched && lineWord.clean.length > 0) {
                         const isMatch = recentWords.some(sw => {
                             if (sw === lineWord.clean) return true;
@@ -675,7 +686,9 @@
                             score += 20; ui.score.innerText = score; totalWordsMatched++;
                             
                             const wordWrapEl = document.getElementById(`word-wrap-${lineIdx}-${wIdx}`);
-                            if (wordWrapEl) wordWrapEl.classList.add('voice-matched');
+                            if (wordWrapEl) {
+                                wordWrapEl.classList.add('voice-matched');
+                            }
                         }
                     }
                 });
@@ -721,7 +734,6 @@
             else ui.finalStats.innerText += " 🎤 ¡Sigue practicando!";
         }
 
-        // --- 5. YOUTUBE API ---
         function onYouTubeIframeAPIReady() {}
         function initYouTube(videoId) {
             if (player) { 
@@ -735,19 +747,20 @@
                     },
                     events: { 
                         'onReady': (event) => {
-                            event.target.setVolume(100); // Forzar volumen al máximo para la bocina
+                            event.target.setVolume(100); 
                         },
                         'onStateChange': (e) => {
                             if (e.data === YT.PlayerState.PLAYING) {
-                                player.setVolume(100); // Reafirmar volumen
+                                player.setVolume(100); 
                                 ui.pauseBtn.innerText = "⏸️ Pausar";
                                 
                                 isPlaying = true;
                                 try { recognition.start(); } catch(err){}
                                 startSyncLoop();
                             }
-                            else if (e.data === YT.PlayerState.PAUSED) {
+                            else if (e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.CUED) {
                                 isPlaying = false;
+                                ui.pauseBtn.innerText = "▶️ Reanudar";
                                 stopSyncLoop();
                                 if (recognition) recognition.stop();
                             }
@@ -775,13 +788,8 @@
 
             ui.msg.innerText = "Autorizando consola... 🎙️";
             try {
-                // APAGAR FILTROS DEL NAVEGADOR PARA RECIBIR AUDIO PROFESIONAL RAW
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: false,
-                        noiseSuppression: false,
-                        autoGainControl: false
-                    } 
+                    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
                 });
                 stream.getTracks().forEach(t => t.stop());
                 
