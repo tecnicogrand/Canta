@@ -237,8 +237,8 @@
     <!-- PANTALLA INICIO -->
     <div id="home-screen" class="screen active">
         <div class="version-tag">
-            Studio v1.6
-            <div class="changelog">Sync Ajustado & Detección Tolerante</div>
+            Studio v1.7
+            <div class="changelog">Motor Secuencial (Cero Adelantos)</div>
         </div>
         <h1 class="title">Neon Voice Pro</h1>
         <p class="subtitle">Modo Consola Profesional Activo</p>
@@ -337,7 +337,7 @@
             countdownOverlay: document.getElementById('countdown-overlay'), countdownNumber: document.getElementById('countdown-number')
         };
 
-        // --- STREAMING_CHUNK:Defining Countdown and UI interaction logic... ---
+        // --- FUNCIONES DE INTERFAZ Y CONTROLES ---
         function startCountdown(callback) {
             ui.countdownOverlay.classList.add('show');
             let count = 3;
@@ -384,7 +384,7 @@
             ui.msg.innerText = "";
         });
 
-        // --- STREAMING_CHUNK:Loading extraction and lyrics search algorithms... ---
+        // --- BÚSQUEDA DE VIDEO Y LETRAS ---
         let fetchTimeout;
         ui.url.addEventListener('input', () => {
             clearTimeout(fetchTimeout);
@@ -416,7 +416,6 @@
             }
         }
 
-        // Retorna Promesa con true (éxito/letras encontradas) o false (letras no encontradas)
         async function fetchLyricsWithRetry(originalTitle, artistOverride, songOverride) {
             parsedLyrics = [];
             const searchUrls = [];
@@ -473,13 +472,13 @@
                 return true;
             } else if (match && match.plainLyrics) {
                 ui.scroller.innerHTML = `<div class='lyric-line active' style='font-size: 1.5rem; line-height: 2; visibility: visible; position: relative;'>${match.plainLyrics}</div>`;
-                return true; // Se encontró pero no sincronizada
+                return true; 
             } else {
                 return false;
             }
         }
 
-        // --- STREAMING_CHUNK:Parsing LRC strings and managing timestamps... ---
+        // --- PARSEO LRC Y RENDERIZADO VISUAL ---
         function parseLRC(lrcString) {
             const lines = lrcString.split('\n');
             const regex = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
@@ -508,7 +507,7 @@
                 const nextLineTime = (i + 1 < tempLines.length) ? tempLines[i+1].time : currentLine.time + 5; 
                 
                 const lineDuration = nextLineTime - currentLine.time;
-                const activeDuration = Math.min(lineDuration, currentLine.words.length * 0.5); 
+                const activeDuration = Math.min(lineDuration, currentLine.words.length * 0.4); 
                 const timePerWord = activeDuration / currentLine.words.length;
 
                 currentLine.words.forEach((w, wIdx) => {
@@ -547,7 +546,6 @@
             ui.scroller.style.transform = `translateY(0px)`;
         }
 
-        // --- STREAMING_CHUNK:Setting up exact matching loop and visual animation... ---
         function startSyncLoop() {
              if(syncIntervalId) clearInterval(syncIntervalId);
              
@@ -558,7 +556,6 @@
                 let newActiveIndex = -1;
 
                 for (let i = parsedLyrics.length - 1; i >= 0; i--) {
-                    // Se redujo la anticipación de 0.3 a 0.1 segundos para no adelantarse a la canción
                     if (currentTime >= parsedLyrics[i].time - 0.1) {
                         newActiveIndex = i; break;
                     }
@@ -612,7 +609,7 @@
         
         function stopSyncLoop() { if(syncIntervalId) clearInterval(syncIntervalId); }
 
-        // --- STREAMING_CHUNK:Configuring the strict array-match speech engine... ---
+        // --- SISTEMA DE RECONOCIMIENTO DE VOZ PROFESIONAL ---
         function setupSpeech() {
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SR) { 
@@ -639,11 +636,10 @@
                 
                 ui.voiceTranscript.innerText = final || interim || "Escuchando...";
                 
-                // Procesar coincidencias dividiendo en array exacto
                 checkVoiceMatch(newPhrases.trim());
             };
             
-            recognition.onerror = (e) => {}; // Ignoramos errores menores para auto-recuperación
+            recognition.onerror = (e) => {}; 
 
             recognition.onend = () => { 
                 if (isPlaying) {
@@ -655,7 +651,7 @@
             return true;
         }
 
-        // FUNCIÓN CRÍTICA DE MATCH EXACTO POR ARRAYS
+        // FUNCIÓN CRÍTICA: MOTOR SECUENCIAL Y ANTI-ADELANTO
         function checkVoiceMatch(spokenText) {
             if (parsedLyrics.length === 0) {
                 if (spokenText.length > 1) { score += 5; ui.score.innerText = score; }
@@ -664,35 +660,49 @@
 
             if (activeLineIndex === -1) return;
             
-            // Convertimos la frase hablada en un arreglo de palabras limpias
             const spokenWordsArray = normalize(spokenText).split(/\s+/).filter(w => w.length > 0);
+            if(spokenWordsArray.length === 0) return;
+
+            const currentTime = player.getCurrentTime();
             
-            // SOLO evaluamos la línea actual y la pasada (por si el navegador tardó en procesar la voz)
+            // Evaluamos línea actual y anterior para perdonar el lag del navegador
             [activeLineIndex - 1, activeLineIndex].forEach(lineIdx => {
                 if (lineIdx < 0 || !parsedLyrics[lineIdx]) return;
                 
                 const line = parsedLyrics[lineIdx];
+                
+                // Mantenemos un "Cursor" de la primera palabra no acertada
+                let firstUnmatchedIdx = line.words.findIndex(w => !w.matched && w.clean.length > 0);
+                if (firstUnmatchedIdx === -1) return; // Línea ya completada
+
                 line.words.forEach((lineWord, wIdx) => {
                     if (!lineWord.matched && lineWord.clean.length > 0) {
                         
+                        // REGLA 1: No permitir que el usuario se salte más de 2 palabras (Secuencialidad)
+                        if (wIdx > firstUnmatchedIdx + 2) return;
+                        
+                        // REGLA 2: No permitir evaluar palabras que están más de 0.5s en el futuro
+                        if (currentTime < lineWord.startTime - 0.5) return;
+
                         let isMatch = false;
                         const wordClean = lineWord.clean;
 
-                        // Match exacto en el arreglo
+                        // Match exacto
                         if (spokenWordsArray.includes(wordClean)) {
                             isMatch = true;
                         } 
-                        // Match súper tolerante para palabras medias/largas
+                        // Match súper tolerante (comparten raíz)
                         else if (wordClean.length >= 3) {
                             const prefix = wordClean.substring(0, 3);
-                            // Si la palabra hablada incluye la letra, la letra incluye la hablada, o comparten las primeras 3 letras
                             if (spokenWordsArray.some(sw => sw.includes(wordClean) || wordClean.includes(sw) || sw.startsWith(prefix))) {
                                 isMatch = true;
                             }
                         }
-                        // Tolerancia automática para conectores o palabras cortas (de, a, y, el, tú) si el usuario hizo algún sonido cercano
-                        else if (wordClean.length <= 2 && spokenWordsArray.length > 0) {
-                            isMatch = true;
+                        // Tolerancia automática para conectores (y, el, la) SÓLO si es exactamente su turno en la secuencia
+                        else if (wordClean.length <= 2) {
+                            if (wIdx === firstUnmatchedIdx) {
+                                isMatch = true;
+                            }
                         }
 
                         if (isMatch) {
@@ -701,6 +711,9 @@
                             
                             const wordWrapEl = document.getElementById(`word-wrap-${lineIdx}-${wIdx}`);
                             if (wordWrapEl) wordWrapEl.classList.add('voice-matched');
+                            
+                            // Actualizar el cursor dinámicamente en el mismo ciclo
+                            firstUnmatchedIdx = line.words.findIndex(w => !w.matched && w.clean.length > 0);
                         }
                     }
                 });
@@ -746,7 +759,7 @@
             else ui.finalStats.innerText += " 🎤 ¡Sigue practicando!";
         }
 
-        // --- STREAMING_CHUNK:Preparing YouTube lifecycle bindings... ---
+        // --- YOUTUBE LIFECYCLE ---
         function onYouTubeIframeAPIReady() {}
         function initYouTube(videoId) {
             if (player) { 
@@ -790,7 +803,7 @@
             }
         }
 
-        // --- STREAMING_CHUNK:Handling Modal logic and general Flow... ---
+        // --- MANEJO DE BOTONES Y MODAL ---
         async function attemptStartKaraoke() {
             const vId = extractVideoID(ui.url.value);
             if (!vId) { ui.msg.style.color = "red"; ui.msg.innerText = "❌ URL inválida."; return; }
@@ -803,20 +816,17 @@
             ui.msg.innerText = "Autorizando consola... 🎙️";
 
             try {
-                // Pre-warm Mic
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
                 stream.getTracks().forEach(t => t.stop());
                 if (!setupSpeech()) return;
 
                 ui.msg.innerText = "Buscando letras... ⏳";
                 
-                // Intento buscar letras
                 const lyricsFound = await fetchLyricsWithRetry(queryTitle, artistOverride, songOverride);
                 
                 if (lyricsFound) {
                     launchKaraokeMode(vId);
                 } else {
-                    // MUESTRA MODAL DE FALLO
                     ui.msg.innerText = "";
                     ui.modalArtist.value = artistOverride;
                     ui.modalSong.value = songOverride;
@@ -842,12 +852,9 @@
             });
         }
 
-        // --- BOTONES PRINCIPALES ---
         ui.startBtn.addEventListener('click', attemptStartKaraoke);
 
-        // --- BOTONES MODAL ---
         ui.modalRetryBtn.addEventListener('click', () => {
-            // Pasa datos al formulario principal y reintenta
             ui.artistInput.value = ui.modalArtist.value;
             ui.songInput.value = ui.modalSong.value;
             ui.customModal.style.display = 'none';
@@ -855,7 +862,6 @@
         });
 
         ui.modalFreeBtn.addEventListener('click', () => {
-            // Fuerza iniciar a pesar de no haber letra
             ui.scroller.innerHTML = "<div class='lyric-line active' style='visibility: visible; position: relative;'>¡Modo Libre! Canta con el alma 🎤</div>";
             const vId = extractVideoID(ui.url.value);
             launchKaraokeMode(vId);
@@ -866,7 +872,6 @@
             ui.msg.innerText = "Operación cancelada.";
         });
 
-        // --- BOTON TERMINAR ---
         ui.stopBtn.addEventListener('click', () => {
             isPlaying = false;
             stopSyncLoop();
